@@ -73,6 +73,10 @@ val appFont = preferences.getString(
     val bottomTitle = preferences.getBoolean(
         "bottom_title_key", true
     )
+    // SwitchPreferenceCompat kullandığınız için getBoolean olmalıdır:
+    val isWidePoster = preferences.getBoolean(
+        "wide_poster_key", false
+    )
     val advancedSearch = preferences.getBoolean(
         "advanced_search", true
     )
