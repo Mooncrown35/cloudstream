@@ -183,6 +183,42 @@
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
     </style>
 
+    <style name="GalatasarayBlueMode">
+    <item name="primaryGrayBackground">@color/GalatasarayBluePrimaryGrayBackground</item>
+    <item name="primaryBlackBackground">@color/GalatasarayBlueBitDarkerGrayBackground</item>
+    <item name="iconGrayBackground">@color/GalatasarayBlueGrayBackground</item>
+    <item name="boxItemBackground">@color/GalatasarayBlueItemBackground</item>
+    <item name="textColor">@color/GalatasarayBlueTextColor</item>
+    <item name="iconColor">@color/GalatasarayBlueIconColor</item>
+    <item name="white">@color/GalatasarayBlueTextColor</item>
+    <item name="black">@color/GalatasarayBluePrimaryGrayBackground</item>
+    <item name="colorOnPrimary">@color/GalatasarayBlueTextColor</item>
+</style>
+
+<style name="GalatasarayMode">
+    <item name="primaryGrayBackground">@color/GalatasarayPrimaryGrayBackground</item>
+    <item name="primaryBlackBackground">@color/GalatasarayBitDarkerGrayBackground</item>
+    <item name="iconGrayBackground">@color/GalatasarayGrayBackground</item>
+    <item name="boxItemBackground">@color/GalatasarayItemBackground</item>
+    <item name="textColor">@color/GalatasarayTextColor</item>
+    <item name="iconColor">@color/GalatasarayIconColor</item>
+    <item name="white">@color/GalatasarayTextColor</item>
+    <item name="black">@color/GalatasarayPrimaryGrayBackground</item>
+    <item name="colorOnPrimary">@color/GalatasarayTextColor</item>
+</style>
+
+<style name="GSMode">
+    <item name="primaryGrayBackground">@color/GSPrimaryGrayBackground</item>
+    <item name="primaryBlackBackground">@color/GSBitDarkerGrayBackground</item>
+    <item name="iconGrayBackground">@color/GSGrayBackground</item>
+    <item name="boxItemBackground">@color/GSItemBackground</item>
+    <item name="textColor">@color/GSTextColor</item>
+    <item name="iconColor">@color/GSIconColor</item>
+    <item name="white">@color/GSTextColor</item>
+    <item name="black">@color/GSPrimaryGrayBackground</item>
+    <item name="colorOnPrimary">@color/GSTextColor</item>
+</style>
+
     <style name="DraculaMode">
         <item name="primaryGrayBackground">@color/DraculaPrimaryGrayBackground</item>
         <item name="primaryBlackBackground">@color/DraculaBitDarkerGrayBackground</item>
