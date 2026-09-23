@@ -85,7 +85,8 @@ open class ParentItemAdapter(
         (binding.homeChildRecyclerview.adapter as? HomeChildItemAdapter)?.submitList(item.list.list)
     }
 
-    override fun onBindContent(
+//*************************************************************************************
+   override fun onBindContent(
         holder: ViewHolderState<Bundle>,
         item: HomeViewModel.ExpandableHomepageList,
         position: Int
@@ -95,6 +96,26 @@ open class ParentItemAdapter(
         val binding = holder.view
         if (binding !is HomepageParentBinding) return
         val info = item.list
+        
+        // =========================================================================
+        // TERCIH OKUMA: Çakışmayı önlemek için 'wide_poster_key' kullanılıyor
+        // =========================================================================
+        val context = binding.root.context
+        val settingsManager = PreferenceManager.getDefaultSharedPreferences(context)
+        
+        // 'poster_size_key' (Int slider) yerine yeni oluşturduğumuz 'wide_poster_key' (Boolean switch)
+        val widePosterKey = context.getString(R.string.wide_poster_key)
+
+        val isWideLayout = if (settingsManager.contains(widePosterKey)) {
+            try {
+                settingsManager.getBoolean(widePosterKey, false)
+            } catch (e: ClassCastException) {
+                false
+            }
+        } else {
+            info.isHorizontalImages
+        }
+
         binding.apply {
             val currentAdapter = homeChildRecyclerview.adapter as? HomeChildItemAdapter
             if (currentAdapter == null) {
@@ -105,13 +126,13 @@ open class ParentItemAdapter(
                     nextFocusUp = homeChildRecyclerview.nextFocusUpId,
                     nextFocusDown = homeChildRecyclerview.nextFocusDownId,
                 ).apply {
-                    isHorizontal = info.isHorizontalImages
+                    isHorizontal = isWideLayout
                     hasNext = item.hasNext
                     submitList(item.list.list)
                 }
             } else {
                 currentAdapter.apply {
-                    isHorizontal = info.isHorizontalImages
+                    isHorizontal = isWideLayout
                     hasNext = item.hasNext
                     this.clickCallback = this@ParentItemAdapter.clickCallback
                     nextFocusUp = homeChildRecyclerview.nextFocusUpId
@@ -143,14 +164,7 @@ open class ParentItemAdapter(
 
                     val count = adapter.itemCount
                     val hasNext = adapter.hasNext
-                    /*println(
-                        "scolling ${recyclerView.isRecyclerScrollable()} ${
-                            recyclerView.canScrollHorizontally(
-                                1
-                            )
-                        }"
-                    )*/
-                    //!recyclerView.canScrollHorizontally(1)
+
                     if (!recyclerView.isRecyclerScrollable() && hasNext && expandCount != count) {
                         expandCount = count
                         expandCallback?.invoke(name)
@@ -158,7 +172,6 @@ open class ParentItemAdapter(
                 }
             })
 
-            //(recyclerView.adapter as HomeChildItemAdapter).notifyDataSetChanged()
             if (isLayout(PHONE)) {
                 homeChildMoreInfo.setOnClickListener {
                     moreInfoClickCallback.invoke(item)
@@ -166,6 +179,7 @@ open class ParentItemAdapter(
             }
         }
     }
+//***************************************************************
 
     override fun onCreateContent(parent: ViewGroup): ParentItemHolder {
         val layoutResId = when {
