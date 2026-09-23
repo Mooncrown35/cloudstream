@@ -26,6 +26,8 @@ import com.lagradost.cloudstream3.ui.settings.Globals.TV
 import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 import com.lagradost.cloudstream3.utils.AppContextUtils.isRecyclerScrollable
 
+import android.content.Context
+
 class LoadClickCallback(
     val action: Int = 0,
     val view: View,
