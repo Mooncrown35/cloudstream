@@ -50,32 +50,26 @@ internal object DiscoverWatchlist {
 
     fun toggle(card: SearchResponse) {
         val old = entries()
-        val next = if (old.any { it.url == card.url }) old.filterNot { it.url == card.url }
-/*      
-	  else listOf(Entry(card.name, card.url, card.type == TvType.TvSeries,
-            card.posterUrl, card.year, card.score?.toDouble(), card.genres,
-            System.currentTimeMillis() / 1000)) + old
-        
-	*/	
-		
-val cardYear = (card as? MovieSearchResponse)?.year 
-    ?: (card as? TvSeriesSearchResponse)?.year 
-    ?: (card as? AnimeSearchResponse)?.year
+	val cardYear = (card as? MovieSearchResponse)?.year 
+            ?: (card as? TvSeriesSearchResponse)?.year 
+            ?: (card as? AnimeSearchResponse)?.year
 
-// Liste ekleme bloğu:
-listOf(
-    Entry(
-        card.name, 
-        card.url, 
-        card.type == TvType.TvSeries,
-        card.posterUrl, 
-        cardYear, 
-        card.score?.toDouble(), 
-        emptyList(),
-        System.currentTimeMillis() / 1000
-    )
-) + old
-		
+        val next = if (old.any { it.url == card.url }) {
+            old.filterNot { it.url == card.url }
+        } else {
+            listOf(
+                Entry(
+                    name = card.name,
+                    url = card.url,
+                    tv = card.type == TvType.TvSeries,
+                    poster = card.posterUrl,
+                    year = cardYear,
+                    rating = card.score?.toDouble(),
+                    genres = emptyList(),
+                    added = System.currentTimeMillis() / 1000
+                )
+            ) + old
+        }
 		
 		setKey(storageKey, next)
         MainActivity.reloadLibraryEvent.invoke(true)
