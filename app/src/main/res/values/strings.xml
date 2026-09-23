@@ -799,6 +799,10 @@
     <string name="player_is_live">Live</string>
 		<string name="wide_poster_settings">Wide Poster Layout</string>
 <string name="wide_poster_settings_des">Expands posters to 16:9 aspect ratio</string>
+		<!-- App Font Settings Keys & Titles -->
+	<string name="app_font_title">App Font</string>
+    <string name="app_font_settings">App Font</string>
+    <string name="app_font_default">Default</string>
 	<!-- System Dialog  -->
     <string name="apply">Apply</string>
 </resources>
