@@ -22,6 +22,15 @@
             android:icon="@drawable/ic_baseline_tv_24"
             android:key="@string/app_layout_key"
             android:title="@string/app_layout" />
+        
+        <!-- UYGULAMA TEMASININ HEMEN ALTINA GELEN YENİ GENİŞ AFİŞ SWITCH'İ -->
+    <SwitchPreference
+        app:defaultValue="false"
+        app:icon="@drawable/ic_baseline_aspect_ratio_24"
+        app:key="@string/wide_poster_key"
+        app:summary="@string/wide_poster_settings_des"
+        app:title="@string/wide_poster_settings" />
+        
         <SwitchPreference
             android:defaultValue="true"
             android:icon="@drawable/title_24px"
