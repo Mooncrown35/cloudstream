@@ -1,5 +1,8 @@
 package com.lagradost.cloudstream3.ui.discover
 
+import com.lagradost.cloudstream3.MovieSearchResponse
+import com.lagradost.cloudstream3.TvSeriesSearchResponse
+import com.lagradost.cloudstream3.AnimeSearchResponse
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.getKey
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.setKey
 import com.lagradost.cloudstream3.MainActivity
@@ -55,11 +58,23 @@ internal object DiscoverWatchlist {
         
 	*/	
 		
-		val cardYear = (card as? MovieSearchResponse)?.year ?: (card as? TvSeriesSearchResponse)?.year ?: (card as? AnimeSearchResponse)?.year
-else listOf(Entry(card.name, card.url, card.type == TvType.TvSeries,
-    card.posterUrl, cardYear, card.score?.toDouble(), emptyList(),
-    System.currentTimeMillis() / 1000)) + old
-		
+val cardYear = (card as? MovieSearchResponse)?.year 
+    ?: (card as? TvSeriesSearchResponse)?.year 
+    ?: (card as? AnimeSearchResponse)?.year
+
+// Liste ekleme bloğu:
+listOf(
+    Entry(
+        card.name, 
+        card.url, 
+        card.type == TvType.TvSeries,
+        card.posterUrl, 
+        cardYear, 
+        card.score?.toDouble(), 
+        emptyList(),
+        System.currentTimeMillis() / 1000
+    )
+) + old
 		
 		
 		setKey(storageKey, next)
