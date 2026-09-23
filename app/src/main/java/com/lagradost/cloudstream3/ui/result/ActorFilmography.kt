@@ -1,5 +1,8 @@
 package com.lagradost.cloudstream3.ui.result
 
+import com.lagradost.cloudstream3.MovieSearchResponse
+import com.lagradost.cloudstream3.TvSeriesSearchResponse
+import com.lagradost.cloudstream3.AnimeSearchResponse
 import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
@@ -405,23 +408,59 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
             FilmographyFilter.MOVIES -> allCredits.filter { it.type == TvType.Movie }
             FilmographyFilter.SERIES -> allCredits.filter { it.type == TvType.TvSeries }
         }.filter { ratingFilter.matches(it.score) }
-            //.filter { languageFilter.code == null || it.originalLanguage == languageFilter.code }
-			.filter { languageFilter.code == null || (it as? MovieSearchResponse)?.originalLanguage == languageFilter.code || (it as? TvSeriesSearchResponse)?.originalLanguage == languageFilter.code }
-			.filter { yf == null || (((it as? MovieSearchResponse)?.year ?: (it as? TvSeriesSearchResponse)?.year)?.let { y -> y >= yf } == true) }
-            .filter { yf == null || (((it as? MovieSearchResponse)?.year ?: (it as? TvSeriesSearchResponse)?.year)?.let { y -> y >= yt } == true) }
-			//.filter { yf == null || (it.year?.let { y -> y >= yf } == true) }
-            //.filter { yt == null || (it.year?.let { y -> y <= yt } == true) }
+           
+/*
+		   .filter { languageFilter.code == null || it.originalLanguage == languageFilter.code }
+		     .filter { yf == null || (it.year?.let { y -> y >= yf } == true) }
+            .filter { yt == null || (it.year?.let { y -> y <= yt } == true) }
             .filter { selectedGenres.isEmpty() || it.genres?.any { g -> g in selectedGenres } == true }
 
         filtered = when (sortFilter) {
             DiscoverSort.POPULAR -> filtered
             DiscoverSort.TOP_RATED -> filtered.sortedWith(compareByDescending<SearchResponse> { it.score?.toDouble() ?: -1.0 }.thenBy { it.name })
-            //DiscoverSort.NEWEST -> filtered.sortedWith(compareByDescending<SearchResponse> { it.year ?: 0 }.thenBy { it.name })
-            //DiscoverSort.OLDEST -> filtered.sortedWith(compareBy<SearchResponse> { it.year ?: Int.MAX_VALUE }.thenBy { it.name })
-            DiscoverSort.NEWEST -> filtered.sortedWith(compareByDescending<SearchResponse> { (it as? MovieSearchResponse)?.year ?: (it as? TvSeriesSearchResponse)?.year ?: (it as? AnimeSearchResponse)?.year ?: 0 }.thenBy { it.name })
-            DiscoverSort.OLDEST -> filtered.sortedWith(compareBy<SearchResponse> { (it as? MovieSearchResponse)?.year ?: (it as? TvSeriesSearchResponse)?.year ?: (it as? AnimeSearchResponse)?.year ?: Int.MAX_VALUE }.thenBy { it.name }
-			DiscoverSort.TITLE_AZ -> filtered.sortedBy { it.name.lowercase() }
+            DiscoverSort.NEWEST -> filtered.sortedWith(compareByDescending<SearchResponse> { it.year ?: 0 }.thenBy { it.name })
+            DiscoverSort.OLDEST -> filtered.sortedWith(compareBy<SearchResponse> { it.year ?: Int.MAX_VALUE }.thenBy { it.name })
+             DiscoverSort.TITLE_AZ -> filtered.sortedBy { it.name.lowercase() }
         }
+
+*/
+
+
+
+// Dil ve Yıl Filtreleri
+.filter { languageFilter.code == null || (it as? MovieSearchResponse)?.originalLanguage == languageFilter.code || (it as? TvSeriesSearchResponse)?.originalLanguage == languageFilter.code }
+.filter { yf == null || (((it as? MovieSearchResponse)?.year ?: (it as? TvSeriesSearchResponse)?.year ?: (it as? AnimeSearchResponse)?.year)?.let { y -> y >= yf } == true) }
+.filter { yt == null || (((it as? MovieSearchResponse)?.year ?: (it as? TvSeriesSearchResponse)?.year ?: (it as? AnimeSearchResponse)?.year)?.let { y -> y <= yt } == true) }
+.filter { selectedGenres.isEmpty() || ((it as? MovieSearchResponse)?.genres ?: emptyList()).any { g -> g in selectedGenres } }
+
+// Sıralama (Sort) Bloğu
+val sorted = when (sort) {
+    DiscoverSort.NEWEST -> filtered.sortedWith(
+        compareByDescending<SearchResponse> { 
+            (it as? MovieSearchResponse)?.year 
+                ?: (it as? TvSeriesSearchResponse)?.year 
+                ?: (it as? AnimeSearchResponse)?.year 
+                ?: 0 
+        }.thenBy { it.name }
+    )
+    DiscoverSort.OLDEST -> filtered.sortedWith(
+        compareBy<SearchResponse> { 
+            (it as? MovieSearchResponse)?.year 
+                ?: (it as? TvSeriesSearchResponse)?.year 
+                ?: (it as? AnimeSearchResponse)?.year 
+                ?: Int.MAX_VALUE 
+        }.thenBy { it.name }
+    )
+    DiscoverSort.TITLE_AZ -> filtered.sortedBy { it.name }
+    DiscoverSort.TITLE_ZA -> filtered.sortedByDescending { it.name }
+    else -> filtered
+}
+
+
+
+
+
+
 
         (binding.filmographyResults.adapter as? SearchAdapter)?.submitList(filtered)
         binding.filmographyResults.isVisible = filtered.isNotEmpty()
@@ -526,8 +565,8 @@ withContext(Dispatchers.IO) {
                 val credits = withContext(Dispatchers.IO) { repository.load(actor) }
                 allCredits = credits
                // availableGenres = credits.flatMap { it.genres.orEmpty() }.distinct().sorted()
-				availableGenres = credits.flatMap { ((it as? MovieSearchResponse)?.genres ?: emptyList()) }.distinct().sorted()
-                // Keep only still-valid genre selections
+				 availableGenres = credits.flatMap { (it as? MovieSearchResponse)?.genres ?: emptyList()}.distinct().sorted()
+				// Keep only still-valid genre selections
                 selectedGenres = selectedGenres.filter { it in availableGenres }.toSet()
                 hasLoaded = true
                 binding.filmographyLoading.isVisible = false
