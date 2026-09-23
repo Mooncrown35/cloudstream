@@ -1,12 +1,12 @@
 package com.lagradost.cloudstream3.ui.home
 
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.lagradost.cloudstream3.LoadResponse
@@ -85,8 +85,8 @@ open class ParentItemAdapter(
         if (binding !is HomepageParentBinding) return
         (binding.homeChildRecyclerview.adapter as? HomeChildItemAdapter)?.submitList(item.list.list)
     }
-//*************************************************************************************
-   override fun onBindContent(
+
+    override fun onBindContent(
         holder: ViewHolderState<Bundle>,
         item: HomeViewModel.ExpandableHomepageList,
         position: Int
@@ -96,14 +96,13 @@ open class ParentItemAdapter(
         val binding = holder.view
         if (binding !is HomepageParentBinding) return
         val info = item.list
-        
+
         // =========================================================================
-        // TERCIH OKUMA: Çakışmayı önlemek için 'wide_poster_key' kullanılıyor
+        // TERCIH OKUMA: PreferenceManager bağımlılığı olmadan sheref preferences okunuyor
         // =========================================================================
         val context = binding.root.context
-        val settingsManager = PreferenceManager.getDefaultSharedPreferences(context)
+        val settingsManager = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
         
-        // 'poster_size_key' (Int slider) yerine yeni oluşturduğumuz 'wide_poster_key' (Boolean switch)
         val widePosterKey = context.getString(R.string.wide_poster_key)
 
         val isWideLayout = if (settingsManager.contains(widePosterKey)) {
@@ -179,7 +178,7 @@ open class ParentItemAdapter(
             }
         }
     }
-//***************************************************************
+
     override fun onCreateContent(parent: ViewGroup): ParentItemHolder {
         val layoutResId = when {
             isLayout(TV) -> R.layout.homepage_parent_tv
