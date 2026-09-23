@@ -27,7 +27,6 @@ import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 import com.lagradost.cloudstream3.utils.AppContextUtils.isRecyclerScrollable
 
 import androidx.preference.PreferenceManager
-import android.content.Context
 
 class LoadClickCallback(
     val action: Int = 0,
