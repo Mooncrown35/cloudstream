@@ -247,7 +247,10 @@
         <item>Flaş Bombası</item>
         <item>Sistem</item>
         <item>Material You</item>
-        <item>Dracula</item>
+        <item>GalatasarayBlue</item>
+		<item>Galatasaray</item>
+		<item>GS</item>
+		<item>Dracula</itemS
         <item>Lavanta Rüyası</item>
         <item>Sessiz Mavi</item>
     </string-array>
@@ -258,7 +261,10 @@
         <item>Light</item>
         <item>System</item>
         <item>Monet</item>
-        <item>Dracula</item>
+        <item>GalatasarayBlue</item>
+		<item>Galatasaray</item>
+		<item>GS</item>
+		<item>Dracula</item>
         <item>Lavender</item>
         <item>SilentBlue</item>
     </string-array>
