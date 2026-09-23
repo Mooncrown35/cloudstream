@@ -6,7 +6,7 @@ import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.app
-import com.lagradost.cloudstream3.newMovieSearchResponse
+imprt com.lagradost.cloudstream3.newMovieSearchResponse
 import com.lagradost.cloudstream3.newTvSeriesSearchResponse
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -105,7 +105,7 @@ internal data class TmdbTitle(
         genreIds?.asSequence()?.distinct()?.mapNotNull { catalogue[it] }?.take(3)?.toList()
             ?.takeIf { it.isNotEmpty() }
 
-    fun toSearchResponse(
+fun toSearchResponse(
         type: String = mediaType.orEmpty(),
         genreNames: Map<Int, String> = emptyMap(),
     ): SearchResponse = with(TmdbMetadata.cards) {
@@ -116,31 +116,33 @@ internal data class TmdbTitle(
             it.isFinite() && it > 0 && it <= 10 && (voteCount == null || voteCount > 0)
         }?.let { Score.from10(it) }
         val poster = posterPath?.takeIf { it.isNotBlank() }?.let { TmdbMetadata.IMAGE_URL + it }
-        		
-		if (isTv) {
+        
+        if (isTv) {
             newTvSeriesSearchResponse(
-                name = displayTitle, url = "https://www.themoviedb.org/tv/$id",
-                type = TvType.TvSeries, fix = false,
+                name = displayTitle, 
+                url = "https://www.themoviedb.org/tv/$id",
+                type = TvType.TvSeries, 
+                fix = false
             ) {
                 this.id = cardId
                 posterUrl = poster
                 score = rating
                 year = this@TmdbTitle.year
-                genres = resolveGenres(genreNames)
-                originalLanguage = this@TmdbTitle.originalLanguage?.takeIf { it.isNotBlank() }
             }
         } else {
             newMovieSearchResponse(
-                name = displayTitle, url = "https://www.themoviedb.org/movie/$id",
-                type = TvType.Movie, fix = false,
+                name = displayTitle, 
+                url = "https://www.themoviedb.org/movie/$id",
+                type = TvType.Movie, 
+                fix = false
             ) {
                 this.id = cardId
                 posterUrl = poster
                 score = rating
                 year = this@TmdbTitle.year
-                genres = resolveGenres(genreNames)
-                originalLanguage = this@TmdbTitle.originalLanguage?.takeIf { it.isNotBlank() }
             }
         }
     }
+
+
 }
