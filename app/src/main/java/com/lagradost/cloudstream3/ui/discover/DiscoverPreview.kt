@@ -38,13 +38,23 @@ internal object DiscoverPreview {
         val dialog = builder.setTitle(card.name).setView(binding.root).create()
         val tv = card.type == TvType.TvSeries
         val saved = DiscoverWatchlist.entries().firstOrNull { it.url == card.url }
-        val metadata = listOfNotNull(
+      /*
+	  val metadata = listOfNotNull(
             (card.year ?: saved?.year)?.toString(),
             context.getString(if (tv) R.string.discover_series else R.string.discover_movies),
             card.score?.toDouble()?.let { "★ %.1f".format(it) },
             (card.genres ?: (card as? SyncAPI.LibraryItem)?.tags)?.joinToString(" • "),
         ).joinToString(" · ")
-        binding.previewMetadata.text = metadata
+    */ 
+	val cardYear = (card as? MovieSearchResponse)?.year ?: (card as? TvSeriesSearchResponse)?.year ?: (card as? AnimeSearchResponse)?.year
+val metadata = listOfNotNull(
+    (cardYear ?: saved?.year)?.toString(),
+    context.getString(if (tv) R.string.discover_series else R.string.discover_movies),
+    card.score?.toDouble()?.let { "★ %.1f".format(it) },
+    ((card as? SyncAPI.LibraryItem)?.tags)?.joinToString(" • "),
+).joinToString(" · ")
+	
+	 binding.previewMetadata.text = metadata
         binding.previewPoster.loadImage(card.posterUrl)
         binding.previewOverview.setText(R.string.discover_preview_loading)
         binding.previewWatchlist.setText(if (DiscoverWatchlist.contains(card))
