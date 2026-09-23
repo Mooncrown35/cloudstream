@@ -259,13 +259,31 @@ object SettingsUIScreen : SearchableSettings {
                             DubStatus.None.name to stringResource(R.string.none),
                             DubStatus.Dubbed.name to stringResource(R.string.app_dubbed_text),
                             DubStatus.Subbed.name to stringResource(R.string.app_subbed_text),
-                        )),
+                        )),					
                     Preference.PreferenceItem.SwitchPreference(
                         preference = settings.ui.bottomTitle,
                         title = stringResource(R.string.bottom_title_settings),
                         subtitle = stringResource(R.string.bottom_title_settings_des),
                         icon = painterResource(R.drawable.title_24px)
                     ),
+// =========================================================================
+        // YENİ EKLENEN KISIM: GENİŞ AFİŞ DÜZENİ SWITCH'İ
+        // =========================================================================
+Preference.PreferenceItem.SwitchPreference(
+    preference = settings.ui.isWidePoster,
+    title = stringResource(R.string.wide_poster_settings), // <-- Yeni title referansı
+    icon = painterResource(R.drawable.ic_baseline_aspect_ratio_24),
+    onValueChanged = { newValue ->
+        HomeChildItemAdapter.sharedPool.clear()
+        ParentItemAdapter.sharedPool.clear()
+        SearchAdapter.sharedPool.clear()
+        safe {
+            activity?.recreate()
+        }
+        true
+    }
+),
+					
                     Preference.PreferenceItem.SliderPreference(
                         preference = settings.ui.posterSize,
                         title = stringResource(R.string.poster_size_settings),
