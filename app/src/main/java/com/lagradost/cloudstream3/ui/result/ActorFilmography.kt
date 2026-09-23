@@ -426,8 +426,6 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
 */
 
 
-
-// Dil ve Yıl Filtreleri
 .filter { languageFilter.code == null || (it as? MovieSearchResponse)?.originalLanguage == languageFilter.code || (it as? TvSeriesSearchResponse)?.originalLanguage == languageFilter.code }
 .filter { yf == null || (((it as? MovieSearchResponse)?.year ?: (it as? TvSeriesSearchResponse)?.year ?: (it as? AnimeSearchResponse)?.year)?.let { y -> y >= yf } == true) }
 .filter { yt == null || (((it as? MovieSearchResponse)?.year ?: (it as? TvSeriesSearchResponse)?.year ?: (it as? AnimeSearchResponse)?.year)?.let { y -> y <= yt } == true) }
@@ -452,7 +450,6 @@ val sorted = when (sort) {
         }.thenBy { it.name }
     )
     DiscoverSort.TITLE_AZ -> filtered.sortedBy { it.name }
-    DiscoverSort.TITLE_ZA -> filtered.sortedByDescending { it.name }
     else -> filtered
 }
 
@@ -565,7 +562,7 @@ withContext(Dispatchers.IO) {
                 val credits = withContext(Dispatchers.IO) { repository.load(actor) }
                 allCredits = credits
                // availableGenres = credits.flatMap { it.genres.orEmpty() }.distinct().sorted()
-				 availableGenres = credits.flatMap { (it as? MovieSearchResponse)?.genres ?: emptyList()}.distinct().sorted()
+				availableGenres = credits.flatMap { (it as? MovieSearchResponse)?.genres ?: emptyList<String>()}.distinct().sorted()
 				// Keep only still-valid genre selections
                 selectedGenres = selectedGenres.filter { it in availableGenres }.toSet()
                 hasLoaded = true
