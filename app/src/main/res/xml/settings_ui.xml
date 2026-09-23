@@ -11,6 +11,13 @@
             android:icon="@drawable/ic_baseline_color_lens_24"
             android:key="@string/app_theme_key"
             android:title="@string/app_theme_settings" />
+        
+         <Preference
+        android:icon="@drawable/ic_baseline_text_fields_24"
+        android:key="@string/app_font_key"
+        android:title="@string/app_font_settings"
+        android:summary="@string/app_font_default" />
+        
         <Preference
             android:icon="@drawable/ic_baseline_tv_24"
             android:key="@string/app_layout_key"
