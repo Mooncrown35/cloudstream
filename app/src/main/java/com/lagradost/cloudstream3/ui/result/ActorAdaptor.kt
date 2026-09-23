@@ -1,7 +1,6 @@
 package com.lagradost.cloudstream3.ui.result
 
-import android.app.SearchManager
-import android.content.Intent
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,8 +16,7 @@ import com.lagradost.cloudstream3.ui.BaseDiffCallback
 import com.lagradost.cloudstream3.ui.NoStateAdapter
 import com.lagradost.cloudstream3.ui.ViewHolderState
 import com.lagradost.cloudstream3.ui.newSharedPool
-import com.lagradost.cloudstream3.ui.settings.Globals.PHONE
-import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
+import com.lagradost.cloudstream3.ui.quicksearch.QuickSearchFragment
 import com.lagradost.cloudstream3.utils.ImageLoader.loadImage
 
 class ActorAdaptor(
@@ -32,7 +30,7 @@ class ActorAdaptor(
             newSharedPool { setMaxRecycledViews(CONTENT, 10) }
     }
 
-    // Easier to store it here than to store it in the ActorData
+    // Seslendirme / Oyuncu resmi değişim durumunu saklar
     val inverted: HashMap<ActorData, Boolean> = hashMapOf()
 
     override fun onCreateContent(parent: ViewGroup): ViewHolderState<Any> {
@@ -79,7 +77,7 @@ class ActorAdaptor(
                     Pair(item.voiceActor?.image, item.actor.image)
                 }
 
-                // Fix tv focus escaping the recyclerview
+                // Android TV / Odaklanma (Focus) sırasının RecyclerView dışına kaçmasını engeller
                 if (position == 0) {
                     itemView.nextFocusLeftId = R.id.result_cast_items
                 } else if ((position - 1) == itemCount) {
@@ -95,26 +93,51 @@ class ActorAdaptor(
                     }
                 }
 
+                // =========================================================================
+                // 1. PENCERE / EYLEM: NORMAL KISA TIKLAMA (OK Tuşu / Ekrana Dokunma)
+                // Oyuncunun tüm film/dizilerini ve biyografisini gösteren alt sayfayı (ActorFilmography) açar.
+                // =========================================================================
                 itemView.setOnClickListener {
-                    inverted[item] = !isInverted
-                    this.onUpdateContent(holder, getItem(position), position)
+                    ActorFilmography.show(itemView.context, item.voiceActor ?: item.actor)
                 }
 
+                // =========================================================================
+                // 2. PENCERE / EYLEM: UZUN BASMA (OK Tuşuna Basılı Tutma)
+                // Oyuncunun sadece kısa biyografisini gösteren pop-up penceresini (ActorInfoDialog) açar.
+                // =========================================================================
                 itemView.setOnLongClickListener {
-                    if (isLayout(PHONE)) {
-                        Intent(Intent.ACTION_WEB_SEARCH).apply {
-                            putExtra(SearchManager.QUERY, item.actor.name)
-                        }.also { intent ->
-                            itemView.context.packageManager?.let { pm ->
-                                if (intent.resolveActivity(pm) != null) {
-                                    itemView.context.startActivity(intent)
-                                }
-                            }
-                        }
-                    }
+                    ActorInfoDialog.show(itemView.context, item.voiceActor ?: item.actor)
                     true
                 }
 
+                // =========================================================================
+                // 3. PENCERE / EYLEM: TV KUMANDASI ÖZEL TUŞ BASIMI
+                // Kumandadaki Oynat/Durdur, Bilgi (Info) veya Renkli tuşlara basıldığında
+                // oyuncunun ismiyle hızlı tam ekran aramayı (QuickSearchFragment) başlatır.
+                // =========================================================================
+                itemView.setOnKeyListener { _, keyCode, event ->
+                    if (event.action == KeyEvent.ACTION_DOWN) {
+                        when (keyCode) {
+                            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+                            KeyEvent.KEYCODE_MEDIA_PLAY,
+                            KeyEvent.KEYCODE_MEDIA_PAUSE,
+                            KeyEvent.KEYCODE_PROG_YELLOW,
+                            KeyEvent.KEYCODE_INFO -> {
+                                // Oyuncunun adı ile genel aramayı tetikler
+                                val targetActor = item.voiceActor ?: item.actor
+                                QuickSearchFragment.pushSearch(
+                                    autoSearch = targetActor.name
+                                )
+                                true // Tuş eyleminin başarıyla işlendiğini bildirir
+                            }
+                            else -> false
+                        }
+                    } else {
+                        false
+                    }
+                }
+
+                // Arayüz bileşenlerine veri ve görsellerin bağlanması (Binding)
                 binding.apply {
                     actorImage.loadImage(mainImg)
 
@@ -122,17 +145,9 @@ class ActorAdaptor(
                     item.role?.let {
                         actorExtra.context?.getString(
                             when (it) {
-                                ActorRole.Main -> {
-                                    R.string.actor_main
-                                }
-
-                                ActorRole.Supporting -> {
-                                    R.string.actor_supporting
-                                }
-
-                                ActorRole.Background -> {
-                                    R.string.actor_background
-                                }
+                                ActorRole.Main -> R.string.actor_main
+                                ActorRole.Supporting -> R.string.actor_supporting
+                                ActorRole.Background -> R.string.actor_background
                             }
                         )?.let { text ->
                             actorExtra.isVisible = true
