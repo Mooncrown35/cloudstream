@@ -1,5 +1,8 @@
 package com.lagradost.cloudstream3.ui.discover
 
+import com.lagradost.cloudstream3.MovieSearchResponse
+import com.lagradost.cloudstream3.TvSeriesSearchResponse
+import com.lagradost.cloudstream3.AnimeSearchResponse
 import android.view.LayoutInflater
 import com.lagradost.cloudstream3.ui.settings.Globals.PHONE
 import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
