@@ -757,12 +757,12 @@
     <plurals name="links_hidden">
         <item quantity="one">%d gizli bağlantı</item>
         <item quantity="other">%d gizli bağlantı</item>
-     <string name="log_cat">Logcat 🐈</string>
+	</plurals>
+	     <string name="log_cat">Logcat 🐈</string>
     <string name="start_paused_settings">Videoları duraklatılmış olarak başlat</string>
     <string name="start_paused_settings_des">Kaynak seçerken zorlanmayı azalt</string>
     <string name="subs_edge">Kenar</string>
     <string name="background">Arka plan</string>
-	</plurals>
 	<!-- Oyuncu / Aktör Bilgileri -->
     <string name="actor_info_loading">Oyuncu bilgileri yükleniyor…</string>
     <string name="actor_info_missing">TMDB\'de eşleşen kişi bulunamadı.</string>
