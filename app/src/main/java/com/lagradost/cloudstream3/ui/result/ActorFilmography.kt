@@ -571,7 +571,14 @@ val credits = withContext(Dispatchers.IO) { repository.load(actor) }
         binding?.filmographyResults?.adapter = null
         super.onDestroyView()
     }
-
+  private fun SearchResponse.extractGenres(): List<String> {
+    return when (this) {
+        is MovieSearchResponse -> this.genres ?: emptyList()
+        is TvSeriesSearchResponse -> this.genres ?: emptyList()
+        is AnimeSearchResponse -> this.genres ?: emptyList()
+        else -> emptyList()
+    }
+}
     private fun formatDate(dateStr: String): String {
         return runCatching {
             val parts = dateStr.split("-")
