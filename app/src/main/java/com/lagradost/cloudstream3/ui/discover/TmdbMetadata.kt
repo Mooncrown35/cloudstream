@@ -1,19 +1,17 @@
 package com.lagradost.cloudstream3.ui.discover
 
+import android.content.res.Resources
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.lagradost.cloudstream3.MainAPI
 import com.lagradost.cloudstream3.Score
 import com.lagradost.cloudstream3.SearchResponse
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.app
-imprt com.lagradost.cloudstream3.newMovieSearchResponse
+import com.lagradost.cloudstream3.newMovieSearchResponse
 import com.lagradost.cloudstream3.newTvSeriesSearchResponse
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-
-import android.content.res.Resources
 import java.util.Locale
-//2 import yeni eklendi
 
 /** Shared metadata transport and cards for discovery and actor credits. */
 internal object TmdbMetadata {
@@ -27,7 +25,7 @@ internal object TmdbMetadata {
     }
 
     // Uygulama/Sistem dilini alırken null-safety garantisi sağlayan yapı
-val currentAppLanguage: String
+    val currentAppLanguage: String
         get() {
             val locale: Locale = try {
                 Resources.getSystem().configuration.locales.get(0) ?: Locale.getDefault()
@@ -50,9 +48,6 @@ val currentAppLanguage: String
         return response.text
     }
 }
-    
-//yeni eklendi
-
 
 internal enum class TmdbRatingFilter(val minimum: Int) {
     ALL(0),
@@ -105,7 +100,7 @@ internal data class TmdbTitle(
         genreIds?.asSequence()?.distinct()?.mapNotNull { catalogue[it] }?.take(3)?.toList()
             ?.takeIf { it.isNotEmpty() }
 
-fun toSearchResponse(
+    fun toSearchResponse(
         type: String = mediaType.orEmpty(),
         genreNames: Map<Int, String> = emptyMap(),
     ): SearchResponse = with(TmdbMetadata.cards) {
@@ -116,13 +111,13 @@ fun toSearchResponse(
             it.isFinite() && it > 0 && it <= 10 && (voteCount == null || voteCount > 0)
         }?.let { Score.from10(it) }
         val poster = posterPath?.takeIf { it.isNotBlank() }?.let { TmdbMetadata.IMAGE_URL + it }
-        
+
         if (isTv) {
             newTvSeriesSearchResponse(
-                name = displayTitle, 
+                name = displayTitle,
                 url = "https://www.themoviedb.org/tv/$id",
-                type = TvType.TvSeries, 
-                fix = false
+                type = TvType.TvSeries,
+                fix = false,
             ) {
                 this.id = cardId
                 posterUrl = poster
@@ -131,10 +126,10 @@ fun toSearchResponse(
             }
         } else {
             newMovieSearchResponse(
-                name = displayTitle, 
+                name = displayTitle,
                 url = "https://www.themoviedb.org/movie/$id",
-                type = TvType.Movie, 
-                fix = false
+                type = TvType.Movie,
+                fix = false,
             ) {
                 this.id = cardId
                 posterUrl = poster
@@ -143,6 +138,4 @@ fun toSearchResponse(
             }
         }
     }
-
-
 }
