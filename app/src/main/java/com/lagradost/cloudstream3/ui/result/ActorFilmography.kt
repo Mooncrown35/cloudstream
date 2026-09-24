@@ -398,18 +398,25 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
             ?: (this as? AnimeSearchResponse)?.year
     }
 
-    private fun SearchResponse.getOriginalLanguage(): String? {
-        return (this as? MovieSearchResponse)?.posterHeaders?.get("Accept-Language")
-            ?: (this as? TvSeriesSearchResponse)?.posterHeaders?.get("Accept-Language")
-    }
-    
-	private fun SearchResponse.extractTags(): List<String> {
-    return when (this) {
-        is MovieSearchResponse -> this.tags
-        is TvSeriesSearchResponse -> this.tags
-        is AnimeSearchResponse -> this.tags
-        else -> null
-    }.orEmpty()
+private fun SearchResponse.getTagsList(): List<String> {
+    return runCatching {
+        val tagsField = this::class.java.methods.find { it.name == "getTags" }
+        @Suppress("UNCHECKED_CAST")
+        (tagsField?.invoke(this) as? List<String>)
+    }.getOrNull().orEmpty()
+}
+
+private fun SearchResponse.getOriginalLanguage(): String? {
+    val headerLang = (this as? MovieSearchResponse)?.posterHeaders?.get("Accept-Language")
+        ?: (this as? TvSeriesSearchResponse)?.posterHeaders?.get("Accept-Language")
+        ?: (this as? AnimeSearchResponse)?.posterHeaders?.get("Accept-Language")
+
+    if (!headerLang.isNullOrBlank()) return headerLang.lowercase()
+
+    return runCatching {
+        val langMethod = this::class.java.methods.find { it.name == "getLang" || it.name == "getLanguage" }
+        langMethod?.invoke(this) as? String
+    }.getOrNull()?.lowercase()
 }
 
 
@@ -419,18 +426,26 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         val yf = yearFrom
         val yt = yearTo
 
-      var filtered = when (activeFilter) {
+var filtered = when (activeFilter) {
     FilmographyFilter.ALL -> allCredits
     FilmographyFilter.MOVIES -> allCredits.filter { it.type == TvType.Movie }
     FilmographyFilter.SERIES -> allCredits.filter { it.type == TvType.TvSeries }
 }.filter { ratingFilter.matches(it.score) }
-    .filter { languageFilter.code == null || it.getOriginalLanguage() == languageFilter.code }
+    .filter { 
+        val filterCode = languageFilter.code?.lowercase()
+        if (filterCode == null) true
+        else {
+            val itemLang = it.getOriginalLanguage()
+            itemLang != null && (itemLang == filterCode || itemLang.startsWith(filterCode))
+        }
+    }
     .filter { yf == null || (it.getYear()?.let { y -> y >= yf } == true) }
     .filter { yt == null || (it.getYear()?.let { y -> y <= yt } == true) }
     .filter { item ->
         if (selectedGenres.isEmpty()) true
         else {
-            item.extractTags().any { it in selectedGenres }
+            val itemTags = item.getTagsList()
+            itemTags.any { it in selectedGenres }
         }
     }
 
@@ -534,20 +549,19 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
                 }
 
 val credits = withContext(Dispatchers.IO) { repository.load(actor) }
-                allCredits = credits
-                
-                // Tip karmaşasını çözmek için 'genres' liste elemanları güvenli şekilde toplanıyor
-               availableGenres = credits
-    .flatMap { it.extractTags() }
+allCredits = credits
+
+// Güvenli şekilde tags/tür listesini topluyoruz
+availableGenres = credits
+    .flatMap { response -> response.getTagsList() }
     .filter { it.isNotBlank() }
     .distinct()
     .sorted()
 
-                // Keep only still-valid genre selections
-                selectedGenres = selectedGenres.filter { it in availableGenres }.toSet()
-                hasLoaded = true
-                binding.filmographyLoading.isVisible = false
-                applyFilter()
+selectedGenres = selectedGenres.filter { it in availableGenres }.toSet()
+hasLoaded = true
+binding.filmographyLoading.isVisible = false
+applyFilter()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
