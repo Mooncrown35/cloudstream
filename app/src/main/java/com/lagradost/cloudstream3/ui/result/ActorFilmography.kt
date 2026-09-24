@@ -1,13 +1,9 @@
 package com.lagradost.cloudstream3.ui.result
 
-import com.lagradost.cloudstream3.MovieSearchResponse
-import com.lagradost.cloudstream3.TvSeriesSearchResponse
-import com.lagradost.cloudstream3.AnimeSearchResponse
 import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
-import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentActivity
@@ -17,9 +13,12 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.chip.Chip
 import com.lagradost.cloudstream3.Actor
+import com.lagradost.cloudstream3.AnimeSearchResponse
 import com.lagradost.cloudstream3.CloudStreamApp.Companion.getActivity
+import com.lagradost.cloudstream3.MovieSearchResponse
 import com.lagradost.cloudstream3.R
 import com.lagradost.cloudstream3.SearchResponse
+import com.lagradost.cloudstream3.TvSeriesSearchResponse
 import com.lagradost.cloudstream3.TvType
 import com.lagradost.cloudstream3.databinding.ActorFilmographyBinding
 import com.lagradost.cloudstream3.mvvm.logError
@@ -35,6 +34,7 @@ import com.lagradost.cloudstream3.ui.search.SEARCH_ACTION_PLAY_FILE
 import com.lagradost.cloudstream3.ui.search.SEARCH_ACTION_SHOW_METADATA
 import com.lagradost.cloudstream3.ui.search.SearchAdapter
 import com.lagradost.cloudstream3.ui.setRecycledViewPool
+import com.lagradost.cloudstream3.utils.ImageLoader.loadImage
 import com.lagradost.cloudstream3.utils.UIHelper.fixSystemBarsPadding
 import com.lagradost.cloudstream3.utils.UIHelper.getSpanCount
 import kotlinx.coroutines.CancellationException
@@ -44,8 +44,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
-import com.lagradost.cloudstream3.utils.ImageLoader.loadImage
-//impor yeni eklendi
+
 /** Arguments and view-scoped work allow dismissal and Activity recreation during a lookup. */
 class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
     BaseFragment.BindingCreator.Inflate(ActorFilmographyBinding::inflate)
@@ -111,9 +110,6 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         val columns = context.getSpanCount()
         results.spanCount = columns
         val manager = results.layoutManager as? GridLayoutManager
-        // AutofitRecyclerView's custom manager only searches attached views
-        // on focus failure. Use the standard manager here so D-pad navigation
-        // lays out off-screen rows, without changing other screens.
         if (manager == null || manager::class != GridLayoutManager::class) {
             results.layoutManager = GridLayoutManager(context, columns)
         } else {
@@ -123,9 +119,6 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
 
     override fun fixLayout(view: View) {
         fixSystemBarsPadding(view)
-        // Full-screen: use display height so RecyclerView gets a bounded
-        // weighted height (header + filters + weight=1 list) and can scroll
-        // both on touch and TV D-pad. Wrap_content clipped to 12 before.
         view.layoutParams?.let {
             it.height = resources.displayMetrics.heightPixels
             view.layoutParams = it
@@ -146,7 +139,7 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         selectedGenres = savedInstanceState?.getStringArray("filmography_genres")?.toSet().orEmpty()
         yearFrom = savedInstanceState?.getInt("filmography_yearFrom")?.takeIf { it > 0 }
         yearTo = savedInstanceState?.getInt("filmography_yearTo")?.takeIf { it > 0 }
-        // legacy single-year key
+        
         savedInstanceState?.getInt("filmography_year")?.takeIf { it > 0 }?.let {
             if (yearFrom == null && yearTo == null) { yearFrom = it; yearTo = it }
         }
@@ -281,7 +274,7 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
             YearRange(null, null),
             YearRange(y, y),
             YearRange(y - 1, y - 1),
-            YearRange(2020, 2029), // 2020s
+            YearRange(2020, 2029),
             YearRange(2015, 2019),
             YearRange(2010, 2019),
             YearRange(2000, 2009),
@@ -398,66 +391,46 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         binding.filmographyFilterReset.isVisible = !isDefault()
     }
 
+    // Helper functions for safe casting
+    private fun SearchResponse.getYear(): Int? {
+        return (this as? MovieSearchResponse)?.year
+            ?: (this as? TvSeriesSearchResponse)?.year
+            ?: (this as? AnimeSearchResponse)?.year
+    }
+
+    private fun SearchResponse.getOriginalLanguage(): String? {
+        return (this as? MovieSearchResponse)?.posterHeaders?.get("Accept-Language")
+            ?: (this as? TvSeriesSearchResponse)?.posterHeaders?.get("Accept-Language")
+    }
+
     private fun applyFilter() {
         val binding = binding ?: return
         if (!hasLoaded) return
         val yf = yearFrom
         val yt = yearTo
+
         var filtered = when (activeFilter) {
             FilmographyFilter.ALL -> allCredits
             FilmographyFilter.MOVIES -> allCredits.filter { it.type == TvType.Movie }
             FilmographyFilter.SERIES -> allCredits.filter { it.type == TvType.TvSeries }
         }.filter { ratingFilter.matches(it.score) }
-           
-/*
-		   .filter { languageFilter.code == null || it.originalLanguage == languageFilter.code }
-		     .filter { yf == null || (it.year?.let { y -> y >= yf } == true) }
-            .filter { yt == null || (it.year?.let { y -> y <= yt } == true) }
-            .filter { selectedGenres.isEmpty() || it.genres?.any { g -> g in selectedGenres } == true }
+            .filter { languageFilter.code == null || it.getOriginalLanguage() == languageFilter.code }
+            .filter { yf == null || (it.getYear()?.let { y -> y >= yf } == true) }
+            .filter { yt == null || (it.getYear()?.let { y -> y <= yt } == true) }
 
         filtered = when (sortFilter) {
-            DiscoverSort.POPULAR -> filtered
-            DiscoverSort.TOP_RATED -> filtered.sortedWith(compareByDescending<SearchResponse> { it.score?.toDouble() ?: -1.0 }.thenBy { it.name })
-            DiscoverSort.NEWEST -> filtered.sortedWith(compareByDescending<SearchResponse> { it.year ?: 0 }.thenBy { it.name })
-            DiscoverSort.OLDEST -> filtered.sortedWith(compareBy<SearchResponse> { it.year ?: Int.MAX_VALUE }.thenBy { it.name })
-             DiscoverSort.TITLE_AZ -> filtered.sortedBy { it.name.lowercase() }
+            DiscoverSort.NEWEST -> filtered.sortedWith(
+                compareByDescending<SearchResponse> { it.getYear() ?: 0 }.thenBy { it.name }
+            )
+            DiscoverSort.OLDEST -> filtered.sortedWith(
+                compareBy<SearchResponse> { it.getYear() ?: Int.MAX_VALUE }.thenBy { it.name }
+            )
+            DiscoverSort.TOP_RATED -> filtered.sortedWith(
+                compareByDescending<SearchResponse> { it.score?.toDouble() ?: -1.0 }.thenBy { it.name }
+            )
+            DiscoverSort.TITLE_AZ -> filtered.sortedBy { it.name.lowercase() }
+            else -> filtered
         }
-
-*/
-
-
-.filter { languageFilter.code == null || (it as? MovieSearchResponse)?.originalLanguage == languageFilter.code || (it as? TvSeriesSearchResponse)?.originalLanguage == languageFilter.code }
-.filter { yf == null || (((it as? MovieSearchResponse)?.year ?: (it as? TvSeriesSearchResponse)?.year ?: (it as? AnimeSearchResponse)?.year)?.let { y -> y >= yf } == true) }
-.filter { yt == null || (((it as? MovieSearchResponse)?.year ?: (it as? TvSeriesSearchResponse)?.year ?: (it as? AnimeSearchResponse)?.year)?.let { y -> y <= yt } == true) }
-.filter { selectedGenres.isEmpty() || ((it as? MovieSearchResponse)?.genres ?: emptyList()).any { g -> g in selectedGenres } }
-
-// Sıralama (Sort) Bloğu
-val sorted = when (sort) {
-    DiscoverSort.NEWEST -> filtered.sortedWith(
-        compareByDescending<SearchResponse> { 
-            (it as? MovieSearchResponse)?.year 
-                ?: (it as? TvSeriesSearchResponse)?.year 
-                ?: (it as? AnimeSearchResponse)?.year 
-                ?: 0 
-        }.thenBy { it.name }
-    )
-    DiscoverSort.OLDEST -> filtered.sortedWith(
-        compareBy<SearchResponse> { 
-            (it as? MovieSearchResponse)?.year 
-                ?: (it as? TvSeriesSearchResponse)?.year 
-                ?: (it as? AnimeSearchResponse)?.year 
-                ?: Int.MAX_VALUE 
-        }.thenBy { it.name }
-    )
-    DiscoverSort.TITLE_AZ -> filtered.sortedBy { it.name }
-    else -> filtered
-}
-
-
-
-
-
-
 
         (binding.filmographyResults.adapter as? SearchAdapter)?.submitList(filtered)
         binding.filmographyResults.isVisible = filtered.isNotEmpty()
@@ -487,84 +460,67 @@ val sorted = when (sort) {
 
         loadJob = viewLifecycleOwner.lifecycleScope.launch {
             try {
+                withContext(Dispatchers.IO) {
+                    val details = repository.details(actor)
+                    val bio = details?.biography?.trim()
 
+                    val formattedBio = if (!bio.isNullOrEmpty()) {
+                        bio
+                    } else {
+                        val infoList = mutableListOf<String>()
 
-// --- BİYOGRAFİ VE OYUNCU BİLGİLERİ KISMI ---
-withContext(Dispatchers.IO) {
-    val details = repository.details(actor)
-    val bio = details?.biography?.trim()
+                        details?.department?.trim()?.takeIf { it.isNotEmpty() }?.let { dept ->
+                            infoList.add("Meslek: $dept")
+                        }
 
-    val formattedBio = if (!bio.isNullOrEmpty()) {
-        bio
-    } else {
-        // Biyografi yoksa ActorDetails nesnesindeki verilerden özet oluştur
-        val infoList = mutableListOf<String>()
+                        details?.birthplace?.trim()?.takeIf { it.isNotEmpty() }?.let { place ->
+                            infoList.add("Doğum Yeri: $place")
+                        }
 
-        // 1. Bilinen Alan (Oyunculuk, Yönetmenlik vb.)
-        details?.department?.trim()?.takeIf { it.isNotEmpty() }?.let { dept ->
-            infoList.add("Meslek: $dept")
-        }
+                        details?.birthday?.trim()?.takeIf { it.isNotEmpty() }?.let { bday ->
+                            val formattedBday = formatDate(bday)
+                            val age = details.age()
+                            if (age != null) {
+                                val ageText = if (details.deathday.isNullOrBlank()) "$age yaşında" else "$age yaşında vefat etti"
+                                infoList.add("Doğum Tarihi: $formattedBday ($ageText)")
+                            } else {
+                                infoList.add("Doğum Tarihi: $formattedBday")
+                            }
+                        }
 
-        // 2. Doğum Yeri
-        details?.birthplace?.trim()?.takeIf { it.isNotEmpty() }?.let { place ->
-            infoList.add("Doğum Yeri: $place")
-        }
+                        details?.deathday?.trim()?.takeIf { it.isNotEmpty() }?.let { dday ->
+                            infoList.add("Ölüm Tarihi: ${formatDate(dday)}")
+                        }
 
-        // 3. Doğum Tarihi ve Yaş
-        details?.birthday?.trim()?.takeIf { it.isNotEmpty() }?.let { bday ->
-            val formattedBday = formatDate(bday)
-            val age = details.age()
-            if (age != null) {
-                // Hayattaysa yaş, vefat ettiyse öldüğü yaştaki bilgisi
-                val ageText = if (details.deathday.isNullOrBlank()) "$age yaşında" else "$age yaşında vefat etti"
-                infoList.add("Doğum Tarihi: $formattedBday ($ageText)")
-            } else {
-                infoList.add("Doğum Tarihi: $formattedBday")
-            }
-        }
+                        if (infoList.isNotEmpty()) {
+                            infoList.joinToString(" • ")
+                        } else {
+                            null
+                        }
+                    }
 
-        // 4. Ölüm Tarihi (Varsa)
-        details?.deathday?.trim()?.takeIf { it.isNotEmpty() }?.let { dday ->
-            infoList.add("Ölüm Tarihi: ${formatDate(dday)}")
-        }
+                    withContext(Dispatchers.Main) {
+                        if (!formattedBio.isNullOrEmpty()) {
+                            binding.filmographyBio.text = formattedBio
+                            binding.filmographyBio.isVisible = true
+                        } else {
+                            binding.filmographyBio.isVisible = false
+                        }
 
-        if (infoList.isNotEmpty()) {
-            infoList.joinToString(" • ")
-        } else {
-            null
-        }
-    }
+                        val imageUrl = actor.image
+                        if (!imageUrl.isNullOrEmpty()) {
+                            binding.filmographyActorImage.loadImage(imageUrl)
+                            binding.filmographyActorImage.isVisible = true
+                        } else {
+                            binding.filmographyActorImage.isVisible = false
+                        }
+                    }
+                }
 
-    withContext(Dispatchers.Main) {
-        if (!formattedBio.isNullOrEmpty()) {
-            binding.filmographyBio.text = formattedBio
-            binding.filmographyBio.isVisible = true
-        } else {
-            binding.filmographyBio.isVisible = false
-        }
-
-        // Oyuncu resmini yükle
-        val imageUrl = actor.image
-        if (!imageUrl.isNullOrEmpty()) {
-            binding.filmographyActorImage.loadImage(imageUrl)
-            binding.filmographyActorImage.isVisible = true
-        } else {
-            binding.filmographyActorImage.isVisible = false
-        }
-    }
-}
-
-
-
-// ----------------------------------------
-
-						
                 val credits = withContext(Dispatchers.IO) { repository.load(actor) }
                 allCredits = credits
-               // availableGenres = credits.flatMap { it.genres.orEmpty() }.distinct().sorted()
-				availableGenres = credits.flatMap { (it as? MovieSearchResponse)?.genres ?: emptyList<String>()}.distinct().sorted()
-				// Keep only still-valid genre selections
-                selectedGenres = selectedGenres.filter { it in availableGenres }.toSet()
+                availableGenres = emptyList()
+                selectedGenres = emptySet()
                 hasLoaded = true
                 binding.filmographyLoading.isVisible = false
                 applyFilter()
@@ -606,14 +562,11 @@ withContext(Dispatchers.IO) {
         binding?.filmographyResults?.adapter = null
         super.onDestroyView()
     }
-//yeni
-private fun formatDate(dateStr: String): String {
-    return runCatching {
-        val parts = dateStr.split("-")
-        if (parts.size == 3) "${parts[2]}.${parts[1]}.${parts[0]}" else dateStr
-    }.getOrDefault(dateStr)
 
-//yeni
-}
-
+    private fun formatDate(dateStr: String): String {
+        return runCatching {
+            val parts = dateStr.split("-")
+            if (parts.size == 3) "${parts[2]}.${parts[1]}.${parts[0]}" else dateStr
+        }.getOrDefault(dateStr)
+    }
 }
