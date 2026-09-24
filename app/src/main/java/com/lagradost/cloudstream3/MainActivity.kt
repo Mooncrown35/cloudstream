@@ -673,14 +673,14 @@ class MainActivity : AppCompatActivity(), ColorPickerDialogListener, BiometricCa
   //  override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean =
     //    CommonActivity.onKeyDown(this, keyCode, event) ?: super.onKeyDown(keyCode, event)
 
-		    //yeni eklendi
-override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-     // showToast("Basılan Tuş Kodu: $keyCode", Toast.LENGTH_SHORT)
-	  when (keyCode) {
+//yeni eklendi 
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        // showToast("Basılan Tuş Kodu: $keyCode", Toast.LENGTH_SHORT)
+        when (keyCode) {
             KeyEvent.KEYCODE_SETTINGS,
-            KeyEvent.KEYCODE_MENU -> {             
-               showAccountSelectLinear()
-			   return true
+            KeyEvent.KEYCODE_MENU -> {              
+                showAccountSelectLinear()
+                return true
             }            
             KeyEvent.KEYCODE_MEDIA_REWIND -> {
                 val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
@@ -690,19 +690,33 @@ override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
                     navController?.navigate(R.id.navigation_settings_extensions)
                     return true
                 }
-            }						
-        KeyEvent.KEYCODE_MEDIA_PLAY,KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,KeyEvent.KEYCODE_PROG_BLUE,
-            KeyEvent.KEYCODE_BUTTON_START,
-            KeyEvent.KEYCODE_MEDIA_PAUSE -> { 
-    val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
-    val navController = navHostFragment?.navController
-    val isPlayingVideo = navController?.currentDestination?.id == R.id.navigation_player
-    if (!isPlayingVideo) {
-        showToast("Ayarlar Açıllıyor", Toast.LENGTH_SHORT)
-        navController?.navigate(R.id.navigation_settings)
-        return true
-    }
-}
+            }
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> { 
+                val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+                val navController = navHostFragment?.navController
+                val isPlayingVideo = navController?.currentDestination?.id == R.id.navigation_player
+                if (!isPlayingVideo) {
+                    showToast("Ayarlar Açılıyor", Toast.LENGTH_SHORT)
+                    navController?.navigate(R.id.navigation_settings)
+                    return true
+                }
+            }
+            KeyEvent.KEYCODE_MEDIA_PLAY,
+            KeyEvent.KEYCODE_MEDIA_PAUSE,
+            KeyEvent.KEYCODE_PROG_BLUE,
+            KeyEvent.KEYCODE_BUTTON_START -> {
+                val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as? NavHostFragment
+                val navController = navHostFragment?.navController
+                if (navController?.currentDestination?.id != R.id.navigation_player) {
+                    val currentFragment = navHostFragment?.childFragmentManager?.fragments?.firstOrNull()
+                    
+                    if (currentFragment is com.lagradost.cloudstream3.ui.home.HomeFragment) {
+                        showToast("Eklenti Seçimi Açılıyor", Toast.LENGTH_SHORT)
+                        currentFragment.actionSelectProvider()
+                        return true
+                    }
+                }
+            }
         }        
         return CommonActivity.onKeyDown(this, keyCode, event) ?: super.onKeyDown(keyCode, event)
     }
