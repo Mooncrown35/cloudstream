@@ -518,21 +518,21 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
                 }
 
 val credits = withContext(Dispatchers.IO) { repository.load(actor) }
-allCredits = credits
+                allCredits = credits
+                
+                // Tip karmaşasını çözmek için 'genres' liste elemanları güvenli şekilde toplanıyor
+                availableGenres = credits
+                    .mapNotNull { (it as? SearchResponse)?.genres }
+                    .flatten()
+                    .filter { it.isNotBlank() }
+                    .distinct()
+                    .sorted()
 
-availableGenres = credits.flatMap<SearchResponse, String> { response ->
-    when (response) {
-        is MovieSearchResponse -> response.genres ?: emptyList()
-        is TvSeriesSearchResponse -> response.genres ?: emptyList()
-        is AnimeSearchResponse -> response.genres ?: emptyList()
-        else -> emptyList()
-    }
-}.filter { it.isNotBlank() }.distinct().sorted()
-
-selectedGenres = emptySet()
-hasLoaded = true
-binding.filmographyLoading.isVisible = false
-applyFilter()
+                // Keep only still-valid genre selections
+                selectedGenres = selectedGenres.filter { it in availableGenres }.toSet()
+                hasLoaded = true
+                binding.filmographyLoading.isVisible = false
+                applyFilter()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
