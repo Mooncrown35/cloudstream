@@ -717,13 +717,12 @@ override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
                     if (currentFragment is com.lagradost.cloudstream3.ui.home.HomeFragment) {
                         showToast("Eklenti Seçimi Açılıyor", Toast.LENGTH_SHORT)
                         
-                        // Private metodu reflection ile güvenli şekilde tetikliyoruz
                         runCatching {
                             val method = currentFragment::class.java.getDeclaredMethod("actionSelectProvider")
                             method.isAccessible = true
                             method.invoke(currentFragment)
-                        }.onFailure {
-                            currentFragment.view?.findViewById<View>(R.id.home_change_provider)?.performClick()
+                        }.onFailure { e ->
+                            e.printStackTrace()
                         }
                         
                         return true
