@@ -353,7 +353,7 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
 
     private fun isDefault(): Boolean =
         activeFilter == FilmographyFilter.ALL &&
-            languageFilter == DiscoverLanguage.ENGLISH &&
+            languageFilter == DiscoverLanguage.ALL &&
             ratingFilter == TmdbRatingFilter.SEVEN &&
             selectedGenres.isEmpty() &&
             yearFrom == null && yearTo == null &&
@@ -362,7 +362,7 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
     private fun resetFilters() {
         if (isDefault()) return
         activeFilter = FilmographyFilter.ALL
-        languageFilter = DiscoverLanguage.ENGLISH
+        languageFilter = DiscoverLanguage.ALL
         ratingFilter = TmdbRatingFilter.SEVEN
         selectedGenres = emptySet()
         yearFrom = null; yearTo = null
@@ -517,9 +517,16 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
                     }
                 }
 
-                val credits = withContext(Dispatchers.IO) { repository.load(actor) }
+    val credits = withContext(Dispatchers.IO) { repository.load(actor) }
                 allCredits = credits
-                availableGenres = emptyList()
+                availableGenres = credits.flatMap { response ->
+                    when (response) {
+                        is MovieSearchResponse -> response.genres ?: emptyList()
+                        is TvSeriesSearchResponse -> response.genres ?: emptyList()
+                        is AnimeSearchResponse -> response.genres ?: emptyList()
+                        else -> emptyList()
+                    }
+                }.filter { it.isNotBlank() }.distinct().sorted()
                 selectedGenres = emptySet()
                 hasLoaded = true
                 binding.filmographyLoading.isVisible = false
