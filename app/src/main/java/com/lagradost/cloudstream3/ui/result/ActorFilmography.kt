@@ -402,6 +402,16 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         return (this as? MovieSearchResponse)?.posterHeaders?.get("Accept-Language")
             ?: (this as? TvSeriesSearchResponse)?.posterHeaders?.get("Accept-Language")
     }
+    
+	private fun SearchResponse.extractTags(): List<String> {
+    return when (this) {
+        is MovieSearchResponse -> this.tags
+        is TvSeriesSearchResponse -> this.tags
+        is AnimeSearchResponse -> this.tags
+        else -> null
+    }.orEmpty()
+}
+
 
     private fun applyFilter() {
         val binding = binding ?: return
@@ -409,14 +419,20 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         val yf = yearFrom
         val yt = yearTo
 
-        var filtered = when (activeFilter) {
-            FilmographyFilter.ALL -> allCredits
-            FilmographyFilter.MOVIES -> allCredits.filter { it.type == TvType.Movie }
-            FilmographyFilter.SERIES -> allCredits.filter { it.type == TvType.TvSeries }
-        }.filter { ratingFilter.matches(it.score) }
-            .filter { languageFilter.code == null || it.getOriginalLanguage() == languageFilter.code }
-            .filter { yf == null || (it.getYear()?.let { y -> y >= yf } == true) }
-            .filter { yt == null || (it.getYear()?.let { y -> y <= yt } == true) }
+      var filtered = when (activeFilter) {
+    FilmographyFilter.ALL -> allCredits
+    FilmographyFilter.MOVIES -> allCredits.filter { it.type == TvType.Movie }
+    FilmographyFilter.SERIES -> allCredits.filter { it.type == TvType.TvSeries }
+}.filter { ratingFilter.matches(it.score) }
+    .filter { languageFilter.code == null || it.getOriginalLanguage() == languageFilter.code }
+    .filter { yf == null || (it.getYear()?.let { y -> y >= yf } == true) }
+    .filter { yt == null || (it.getYear()?.let { y -> y <= yt } == true) }
+    .filter { item ->
+        if (selectedGenres.isEmpty()) true
+        else {
+            item.extractTags().any { it in selectedGenres }
+        }
+    }
 
         filtered = when (sortFilter) {
             DiscoverSort.NEWEST -> filtered.sortedWith(
@@ -521,12 +537,11 @@ val credits = withContext(Dispatchers.IO) { repository.load(actor) }
                 allCredits = credits
                 
                 // Tip karmaşasını çözmek için 'genres' liste elemanları güvenli şekilde toplanıyor
-                availableGenres = credits
-                    .mapNotNull { (it as? SearchResponse)?.genres }
-                    .flatten()
-                    .filter { it.isNotBlank() }
-                    .distinct()
-                    .sorted()
+               availableGenres = credits
+    .flatMap { it.extractTags() }
+    .filter { it.isNotBlank() }
+    .distinct()
+    .sorted()
 
                 // Keep only still-valid genre selections
                 selectedGenres = selectedGenres.filter { it in availableGenres }.toSet()
@@ -571,14 +586,7 @@ val credits = withContext(Dispatchers.IO) { repository.load(actor) }
         binding?.filmographyResults?.adapter = null
         super.onDestroyView()
     }
-  private fun SearchResponse.extractGenres(): List<String> {
-    return when (this) {
-        is MovieSearchResponse -> this.genres ?: emptyList()
-        is TvSeriesSearchResponse -> this.genres ?: emptyList()
-        is AnimeSearchResponse -> this.genres ?: emptyList()
-        else -> emptyList()
-    }
-}
+
     private fun formatDate(dateStr: String): String {
         return runCatching {
             val parts = dateStr.split("-")
