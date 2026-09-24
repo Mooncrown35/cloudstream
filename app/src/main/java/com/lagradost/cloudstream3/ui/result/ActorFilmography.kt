@@ -384,7 +384,7 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         val genreValue = if (selectedGenres.isEmpty()) getString(R.string.discover_filter_genres)
         else getString(R.string.discover_genres_selected, selectedGenres.size)
         setChip(binding.filmographyFilterGenres, getString(R.string.discover_filter_genres), genreValue)
-        binding.filmographyFilterGenres.isEnabled = availableGenres.isNotEmpty()
+        binding.filmographyFilterGenres.isEnabled = true
         val yearLabel = yearRangeLabel(YearRange(yearFrom, yearTo))
         setChip(binding.filmographyFilterYear, getString(R.string.discover_filter_year), yearLabel)
         setChip(binding.filmographyFilterSort, getString(R.string.discover_filter_sort), getString(sortFilter.labelRes))
@@ -398,12 +398,12 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
             ?: (this as? AnimeSearchResponse)?.year
     }
 
-private fun SearchResponse.getTagsList(): List<String> {
-    return runCatching {
-        val tagsField = this::class.java.methods.find { it.name == "getTags" }
-        @Suppress("UNCHECKED_CAST")
-        (tagsField?.invoke(this) as? List<String>)
-    }.getOrNull().orEmpty()
+// Cloudstream tip dönüşümleriyle posterHeaders/tags extraction
+private fun SearchResponse.extractTagsList(): List<String> {
+    return (this as? MovieSearchResponse)?.tags
+        ?: (this as? TvSeriesSearchResponse)?.tags
+        ?: (this as? AnimeSearchResponse)?.tags
+        ?: emptyList()
 }
 
 private fun SearchResponse.getOriginalLanguage(): String? {
@@ -412,11 +412,10 @@ private fun SearchResponse.getOriginalLanguage(): String? {
         ?: (this as? AnimeSearchResponse)?.posterHeaders?.get("Accept-Language")
 
     if (!headerLang.isNullOrBlank()) return headerLang.lowercase()
-
-    return runCatching {
-        val langMethod = this::class.java.methods.find { it.name == "getLang" || it.name == "getLanguage" }
-        langMethod?.invoke(this) as? String
-    }.getOrNull()?.lowercase()
+    
+    return (this as? MovieSearchResponse)?.lang
+        ?: (this as? TvSeriesSearchResponse)?.lang
+        ?: (this as? AnimeSearchResponse)?.lang
 }
 
 
@@ -444,8 +443,7 @@ var filtered = when (activeFilter) {
     .filter { item ->
         if (selectedGenres.isEmpty()) true
         else {
-            val itemTags = item.getTagsList()
-            itemTags.any { it in selectedGenres }
+            item.extractTagsList().any { it in selectedGenres }
         }
     }
 
@@ -551,13 +549,10 @@ var filtered = when (activeFilter) {
 val credits = withContext(Dispatchers.IO) { repository.load(actor) }
 allCredits = credits
 
-// Güvenli şekilde tags/tür listesini topluyoruz
-availableGenres = credits
-    .flatMap { response -> response.getTagsList() }
-    .filter { it.isNotBlank() }
-    .distinct()
-    .sorted()
+// Hem API'den gelen etiketleri topla hem de liste boş kalırsa butonun kilitlenmesini engelle
+val fetchedGenres = credits.flatMap { it.extractTagsList() }.filter { it.isNotBlank() }.distinct().sorted()
 
+availableGenres = fetchedGenres
 selectedGenres = selectedGenres.filter { it in availableGenres }.toSet()
 hasLoaded = true
 binding.filmographyLoading.isVisible = false
