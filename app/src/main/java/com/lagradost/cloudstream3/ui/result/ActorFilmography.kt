@@ -380,7 +380,6 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         else getString(R.string.discover_genres_selected, selectedGenres.size)
         setChip(binding.filmographyFilterGenres, getString(R.string.discover_filter_genres), genreValue)
         
-        // TV D-pad üzerinde çip atlanmasın diye her zaman aktif tutuyoruz
         binding.filmographyFilterGenres.isEnabled = true
         
         val yearLabel = yearRangeLabel(YearRange(yearFrom, yearTo))
@@ -389,43 +388,84 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         binding.filmographyFilterReset.isVisible = !isDefault()
     }
 
-    // --- GÜVENLİ REFLECTION YARDIMCI METODLARI ---
+    // --- GÜNCELLENMİŞ VE GELİŞTİRİLMİŞ REFLECTION YARDIMCI METODLARI ---
     @Suppress("UNCHECKED_CAST")
     private fun SearchResponse.getTagsList(): List<String> {
         return runCatching {
-            val field = this::class.java.declaredFields.firstOrNull { 
-                it.name == "tags" || it.name == "genres" 
+            var result: List<String>? = null
+            var clazz: Class<*>? = this::class.java
+            while (clazz != null && clazz != Any::class.java) {
+                val fields = clazz.declaredFields
+                for (field in fields) {
+                    if (field.name == "tags" || field.name == "genres" || field.name == "categories") {
+                        field.isAccessible = true
+                        val value = field.get(this)
+                        if (value is List<*>) {
+                            result = value.mapNotNull {
+                                when (it) {
+                                    is String -> it
+                                    is Enum<*> -> it.name
+                                    else -> it?.toString()
+                                }
+                            }
+                            if (result.isNotEmpty()) break
+                        } else if (value is Set<*>) {
+                            result = value.mapNotNull { it?.toString() }
+                            if (result.isNotEmpty()) break
+                        }
+                    }
+                }
+                if (!result.isNullOrEmpty()) break
+                clazz = clazz.superclass
             }
-            field?.isAccessible = true
-            (field?.get(this) as? List<*>)?.filterIsInstance<String>()
+            result
         }.getOrNull().orEmpty()
     }
 
     private fun SearchResponse.getOriginalLanguage(): String? {
         return runCatching {
-            val field = this::class.java.declaredFields.firstOrNull { 
-                it.name == "lang" || it.name == "language" || it.name == "posterHeaders" 
+            var langStr: String? = null
+            var clazz: Class<*>? = this::class.java
+            while (clazz != null && clazz != Any::class.java) {
+                for (field in clazz.declaredFields) {
+                    if (field.name == "lang" || field.name == "language" || field.name == "posterHeaders") {
+                        field.isAccessible = true
+                        when (val value = field.get(this)) {
+                            is String -> if (value.isNotBlank()) langStr = value
+                            is Map<*, *> -> {
+                                val headerLang = (value as? Map<String, String>)?.get("Accept-Language")
+                                if (!headerLang.isNullOrBlank()) langStr = headerLang
+                            }
+                        }
+                    }
+                    if (langStr != null) break
+                }
+                if (langStr != null) break
+                clazz = clazz.superclass
             }
-            field?.isAccessible = true
-            when (val value = field?.get(this)) {
-                is String -> value
-                is Map<*, *> -> (value as? Map<String, String>)?.get("Accept-Language")
-                else -> null
-            }
+            langStr
         }.getOrNull()
     }
 
     private fun SearchResponse.getReleaseYear(): Int? {
         return runCatching {
-            val field = this::class.java.declaredFields.firstOrNull { 
-                it.name == "year" || it.name == "releaseDate" 
+            var foundYear: Int? = null
+            var clazz: Class<*>? = this::class.java
+            while (clazz != null && clazz != Any::class.java) {
+                for (field in clazz.declaredFields) {
+                    if (field.name == "year" || field.name == "releaseDate") {
+                        field.isAccessible = true
+                        when (val value = field.get(this)) {
+                            is Int -> foundYear = value
+                            is String -> foundYear = value.take(4).toIntOrNull()
+                        }
+                    }
+                    if (foundYear != null) break
+                }
+                if (foundYear != null) break
+                clazz = clazz.superclass
             }
-            field?.isAccessible = true
-            when (val value = field?.get(this)) {
-                is Int -> value
-                is String -> value.take(4).toIntOrNull()
-                else -> null
-            }
+            foundYear
         }.getOrNull()
     }
 
@@ -453,7 +493,9 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
             .filter { item ->
                 if (selectedGenres.isEmpty()) true
                 else {
-                    item.getTagsList().any { it in selectedGenres }
+                    item.getTagsList().any { tag ->
+                        selectedGenres.any { selected -> tag.equals(selected, ignoreCase = true) }
+                    }
                 }
             }
 
@@ -563,7 +605,10 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
                 val fetchedGenres = credits.flatMap { it.getTagsList() }.filter { it.isNotBlank() }.distinct().sorted()
 
                 availableGenres = fetchedGenres
-                selectedGenres = selectedGenres.filter { it in availableGenres }.toSet()
+                selectedGenres = selectedGenres.filter { selected -> 
+                    availableGenres.any { it.equals(selected, ignoreCase = true) } 
+                }.toSet()
+                
                 hasLoaded = true
                 binding.filmographyLoading.isVisible = false
                 applyFilter()
