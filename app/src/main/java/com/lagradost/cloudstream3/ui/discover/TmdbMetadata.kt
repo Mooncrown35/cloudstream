@@ -15,7 +15,6 @@ import java.util.Locale
 
 /** Shared metadata transport and cards for discovery and actor credits. */
 internal object TmdbMetadata {
-    // The application key already used by TmdbProvider and actor filmography.
     private const val API_KEY = "e6333b32409e02a4a6eba6fb7ff866bb"
     private const val API_URL = "https://api.themoviedb.org/3"
     const val IMAGE_URL = "https://image.tmdb.org/t/p/w500"
@@ -24,7 +23,6 @@ internal object TmdbMetadata {
         override var name = "TMDB"
     }
 
-    // Uygulama/Sistem dilini alırken null-safety garantisi sağlayan yapı
     val currentAppLanguage: String
         get() {
             val locale: Locale = try {
@@ -95,7 +93,6 @@ internal data class TmdbTitle(
     val usable: Boolean
         get() = adult != true && (id ?: 0) > 0 && displayTitle.isNotBlank()
 
-    /** First three catalogue names for the poster overlay; unknown IDs are dropped. */
     fun resolveGenres(catalogue: Map<Int, String>): List<String>? =
         genreIds?.asSequence()?.distinct()?.mapNotNull { catalogue[it] }?.take(3)?.toList()
             ?.takeIf { it.isNotEmpty() }
@@ -105,12 +102,16 @@ internal data class TmdbTitle(
         genreNames: Map<Int, String> = emptyMap(),
     ): SearchResponse = with(TmdbMetadata.cards) {
         val isTv = type == "tv"
-        // SearchAdapter compares IDs without the media type.
         val cardId = id?.let { if (isTv) -it else it }
         val rating = voteAverage?.takeIf {
             it.isFinite() && it > 0 && it <= 10 && (voteCount == null || voteCount > 0)
         }?.let { Score.from10(it) }
         val poster = posterPath?.takeIf { it.isNotBlank() }?.let { TmdbMetadata.IMAGE_URL + it }
+
+        val resolvedTags = resolveGenres(genreNames)
+        val headers = originalLanguage?.takeIf { it.isNotBlank() }?.let { lang ->
+            mapOf("Accept-Language" to lang)
+        }
 
         if (isTv) {
             newTvSeriesSearchResponse(
@@ -123,6 +124,8 @@ internal data class TmdbTitle(
                 posterUrl = poster
                 score = rating
                 year = this@TmdbTitle.year
+                tags = resolvedTags
+                posterHeaders = headers
             }
         } else {
             newMovieSearchResponse(
@@ -135,6 +138,8 @@ internal data class TmdbTitle(
                 posterUrl = poster
                 score = rating
                 year = this@TmdbTitle.year
+                tags = resolvedTags
+                posterHeaders = headers
             }
         }
     }
