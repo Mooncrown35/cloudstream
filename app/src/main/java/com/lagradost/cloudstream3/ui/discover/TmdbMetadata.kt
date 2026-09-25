@@ -124,7 +124,7 @@ internal data class TmdbTitle(
                 posterUrl = poster
                 score = rating
                 year = this@TmdbTitle.year
-                tags = resolvedTags
+                genres = resolvedTags?.toCollection(ArrayList())
                 posterHeaders = headers
             }
         } else {
@@ -138,7 +138,7 @@ internal data class TmdbTitle(
                 posterUrl = poster
                 score = rating
                 year = this@TmdbTitle.year
-                tags = resolvedTags
+                genres = resolvedTags?.toCollection(ArrayList())
                 posterHeaders = headers
             }
         }
