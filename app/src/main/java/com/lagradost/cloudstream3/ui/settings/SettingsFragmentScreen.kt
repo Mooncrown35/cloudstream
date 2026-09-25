@@ -378,7 +378,7 @@ object SettingsFragmentScreen : Screen {
             },
         )
 
-        val keyboardController = LocalSoftwareKeyboardController.current
+      //  val keyboardController = LocalSoftwareKeyboardController.current
         DisposableEffect(Unit) {
             onDispose {
                 keyboardController?.hide()
