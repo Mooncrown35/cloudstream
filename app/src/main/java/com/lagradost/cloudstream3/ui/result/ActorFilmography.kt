@@ -389,60 +389,22 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun SearchResponse.getTagsList(): List<String> {
+private fun SearchResponse.getTagsList(): List<String> {
+        // Cloudstream SearchResponse sınıflarında (MovieSearchResponse / TvSeriesSearchResponse) 
+        // türler "tags" listesinde saklanır.
         return runCatching {
-            var result: List<String>? = null
-            var clazz: Class<*>? = this::class.java
-            while (clazz != null && clazz != Any::class.java) {
-                val fields = clazz.declaredFields
-                for (field in fields) {
-                    if (field.name == "tags" || field.name == "genres" || field.name == "categories") {
-                        field.isAccessible = true
-                        val value = field.get(this)
-                        if (value is List<*>) {
-                            result = value.mapNotNull {
-                                when (it) {
-                                    is String -> it
-                                    is Enum<*> -> it.name
-                                    else -> it?.toString()
-                                }
-                            }
-                            if (result.isNotEmpty()) break
-                        } else if (value is Set<*>) {
-                            result = value.mapNotNull { it?.toString() }
-                            if (result.isNotEmpty()) break
-                        }
-                    }
-                }
-                if (!result.isNullOrEmpty()) break
-                clazz = clazz.superclass
+            when (this) {
+                is com.lagradost.cloudstream3.MovieSearchResponse -> this.tags
+                is com.lagradost.cloudstream3.TvSeriesSearchResponse -> this.tags
+                else -> emptyList()
             }
-            result
         }.getOrNull().orEmpty()
     }
 
-    private fun SearchResponse.getOriginalLanguage(): String? {
+private fun SearchResponse.getOriginalLanguage(): String? {
+        // posterHeaders içindeki "Accept-Language" değerini Doğrudan oku
         return runCatching {
-            var langStr: String? = null
-            var clazz: Class<*>? = this::class.java
-            while (clazz != null && clazz != Any::class.java) {
-                for (field in clazz.declaredFields) {
-                    if (field.name == "lang" || field.name == "language" || field.name == "posterHeaders") {
-                        field.isAccessible = true
-                        when (val value = field.get(this)) {
-                            is String -> if (value.isNotBlank()) langStr = value
-                            is Map<*, *> -> {
-                                val headerLang = (value as? Map<String, String>)?.get("Accept-Language")
-                                if (!headerLang.isNullOrBlank()) langStr = headerLang
-                            }
-                        }
-                    }
-                    if (langStr != null) break
-                }
-                if (langStr != null) break
-                clazz = clazz.superclass
-            }
-            langStr
+            this.posterHeaders?.get("Accept-Language")
         }.getOrNull()
     }
 
