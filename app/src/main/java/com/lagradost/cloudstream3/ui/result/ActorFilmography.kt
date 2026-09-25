@@ -134,7 +134,7 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         selectedGenres = savedInstanceState?.getStringArray("filmography_genres")?.toSet().orEmpty()
         yearFrom = savedInstanceState?.getInt("filmography_yearFrom")?.takeIf { it > 0 }
         yearTo = savedInstanceState?.getInt("filmography_yearTo")?.takeIf { it > 0 }
-        
+
         savedInstanceState?.getInt("filmography_year")?.takeIf { it > 0 }?.let {
             if (yearFrom == null && yearTo == null) { yearFrom = it; yearTo = it }
         }
@@ -379,16 +379,15 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         val genreValue = if (selectedGenres.isEmpty()) getString(R.string.discover_filter_genres)
         else getString(R.string.discover_genres_selected, selectedGenres.size)
         setChip(binding.filmographyFilterGenres, getString(R.string.discover_filter_genres), genreValue)
-        
+
         binding.filmographyFilterGenres.isEnabled = true
-        
+
         val yearLabel = yearRangeLabel(YearRange(yearFrom, yearTo))
         setChip(binding.filmographyFilterYear, getString(R.string.discover_filter_year), yearLabel)
         setChip(binding.filmographyFilterSort, getString(R.string.discover_filter_sort), getString(sortFilter.labelRes))
         binding.filmographyFilterReset.isVisible = !isDefault()
     }
 
-    // --- GÜNCELLENMİŞ VE GELİŞTİRİLMİŞ REFLECTION YARDIMCI METODLARI ---
     @Suppress("UNCHECKED_CAST")
     private fun SearchResponse.getTagsList(): List<String> {
         return runCatching {
@@ -480,7 +479,7 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
             FilmographyFilter.MOVIES -> allCredits.filter { it.type == TvType.Movie }
             FilmographyFilter.SERIES -> allCredits.filter { it.type == TvType.TvSeries }
         }.filter { ratingFilter.matches(it.score) }
-            .filter { 
+            .filter {
                 val filterCode = languageFilter.code?.lowercase()
                 if (filterCode == null) true
                 else {
@@ -601,14 +600,13 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
                 val credits = withContext(Dispatchers.IO) { repository.load(actor) }
                 allCredits = credits
 
-                // Reflection uzantısıyla etiketleri topluyoruz
                 val fetchedGenres = credits.flatMap { it.getTagsList() }.filter { it.isNotBlank() }.distinct().sorted()
 
                 availableGenres = fetchedGenres
                 selectedGenres = selectedGenres.filter { selected -> 
                     availableGenres.any { it.equals(selected, ignoreCase = true) } 
                 }.toSet()
-                
+
                 hasLoaded = true
                 binding.filmographyLoading.isVisible = false
                 applyFilter()
