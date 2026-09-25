@@ -112,8 +112,7 @@ internal data class TmdbTitle(
         val headers = originalLanguage?.takeIf { it.isNotBlank() }?.let { lang ->
             mapOf("Accept-Language" to lang)
         }
-
-        if (isTv) {
+if (isTv) {
             newTvSeriesSearchResponse(
                 name = displayTitle,
                 url = "https://www.themoviedb.org/tv/$id",
@@ -124,7 +123,7 @@ internal data class TmdbTitle(
                 posterUrl = poster
                 score = rating
                 year = this@TmdbTitle.year
-                genres = resolvedTags?.toCollection(ArrayList())
+                tags = resolvedTags // "genres =" yerine doğrudan "tags =" veya her ikisini de besleyebilirsiniz
                 posterHeaders = headers
             }
         } else {
@@ -138,9 +137,10 @@ internal data class TmdbTitle(
                 posterUrl = poster
                 score = rating
                 year = this@TmdbTitle.year
-                genres = resolvedTags?.toCollection(ArrayList())
+                tags = resolvedTags
                 posterHeaders = headers
             }
         }
+      
     }
 }
