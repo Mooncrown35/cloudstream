@@ -293,7 +293,7 @@ object SettingsFragmentScreen : Screen {
         var hasFocus by remember { mutableStateOf(false) }
         val focusProgress by animateFloatAsState(targetValue = if (hasFocus) 1.0f else 0.0f)
         val focusManager = LocalFocusManager.current
-   
+        val keyboardController = LocalSoftwareKeyboardController.current
         val focusRequester = remember { FocusRequester() }
         TextField(
             state = textFieldState,
