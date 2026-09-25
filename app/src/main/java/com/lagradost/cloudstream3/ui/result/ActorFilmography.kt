@@ -388,21 +388,15 @@ class ActorFilmography : BaseBottomSheetDialogFragment<ActorFilmographyBinding>(
         binding.filmographyFilterReset.isVisible = !isDefault()
     }
 
-    @Suppress("UNCHECKED_CAST")
-private fun SearchResponse.getTagsList(): List<String> {
-        // Cloudstream SearchResponse sınıflarında (MovieSearchResponse / TvSeriesSearchResponse) 
-        // türler "tags" listesinde saklanır.
+    private fun SearchResponse.getTagsList(): List<String> {
+        // TmdbMetadata üzerinden posterHeaders["X-Tags"] içerisine yazılan virgülle ayrılmış kategorileri ayrıştırır
         return runCatching {
-            when (this) {
-                is com.lagradost.cloudstream3.MovieSearchResponse -> this.tags
-                is com.lagradost.cloudstream3.TvSeriesSearchResponse -> this.tags
-                else -> emptyList()
-            }
+            this.posterHeaders?.get("X-Tags")?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }
         }.getOrNull().orEmpty()
     }
 
-private fun SearchResponse.getOriginalLanguage(): String? {
-        // posterHeaders içindeki "Accept-Language" değerini Doğrudan oku
+    private fun SearchResponse.getOriginalLanguage(): String? {
+        // TmdbMetadata üzerinden posterHeaders["Accept-Language"] içerisine yazılan dil kodunu okur
         return runCatching {
             this.posterHeaders?.get("Accept-Language")
         }.getOrNull()
