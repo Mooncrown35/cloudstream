@@ -109,10 +109,21 @@ internal data class TmdbTitle(
         val poster = posterPath?.takeIf { it.isNotBlank() }?.let { TmdbMetadata.IMAGE_URL + it }
 
         val resolvedTags = resolveGenres(genreNames)
-        val headers = originalLanguage?.takeIf { it.isNotBlank() }?.let { lang ->
-            mapOf("Accept-Language" to lang)
+        
+        // Dil ve Kategori verilerini birlikte posterHeaders haritası içerisine paketliyoruz
+        val customHeaders = mutableMapOf<String, String>()
+        
+        originalLanguage?.takeIf { it.isNotBlank() }?.let { lang ->
+            customHeaders["Accept-Language"] = lang
         }
-if (isTv) {
+        
+        if (!resolvedTags.isNullOrEmpty()) {
+            customHeaders["X-Tags"] = resolvedTags.joinToString(",")
+        }
+
+        val headers = customHeaders.ifEmpty { null }
+
+        if (isTv) {
             newTvSeriesSearchResponse(
                 name = displayTitle,
                 url = "https://www.themoviedb.org/tv/$id",
@@ -123,7 +134,6 @@ if (isTv) {
                 posterUrl = poster
                 score = rating
                 year = this@TmdbTitle.year
-                tags = resolvedTags // "genres =" yerine doğrudan "tags =" veya her ikisini de besleyebilirsiniz
                 posterHeaders = headers
             }
         } else {
@@ -137,10 +147,8 @@ if (isTv) {
                 posterUrl = poster
                 score = rating
                 year = this@TmdbTitle.year
-                tags = resolvedTags
                 posterHeaders = headers
             }
         }
-      
     }
 }
