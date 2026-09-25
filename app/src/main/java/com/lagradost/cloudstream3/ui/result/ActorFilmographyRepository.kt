@@ -14,7 +14,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** TMDB supplies metadata only. Selected titles are searched through installed providers. */
 internal class ActorFilmographyRepository(
     private val request: suspend (String, Map<String, String>) -> String = TmdbMetadata::request,
 ) {
@@ -51,11 +50,9 @@ internal class ActorFilmographyRepository(
             request(
                 "/search/person",
                 mapOf("query" to actorName, "language" to TmdbMetadata.currentAppLanguage, "include_adult" to "false"),
-			//	mapOf("query" to actorName, "language" to "en-US", "include_adult" to "false"),
             )
         ).results.orEmpty().filter { (it.id ?: 0) > 0 }
 
-        // Image paths survive TMDB's image-size variations and help disambiguate names.
         val imageFile = actor.image.imageFileName()
         val person = people.firstOrNull {
             imageFile != null && it.profilePath.imageFileName() == imageFile
@@ -67,15 +64,13 @@ internal class ActorFilmographyRepository(
 
     suspend fun details(actor: Actor): ActorDetails? {
         val id = resolvePersonId(actor) ?: return null
-         return parseJson<ActorDetails>(request("/person/$id", mapOf("language" to TmdbMetadata.currentAppLanguage)))
-		//return parseJson<ActorDetails>(request("/person/$id", mapOf("language" to "en-US")))
+        return parseJson<ActorDetails>(request("/person/$id", mapOf("language" to TmdbMetadata.currentAppLanguage)))
     }
 
     suspend fun load(actor: Actor): List<SearchResponse> {
         val id = resolvePersonId(actor) ?: return emptyList()
         val credits = parseJson<TmdbCombinedCredits>(
-		//request("/person/$id/combined_credits", mapOf("language" to "en-US"))
-            request("/person/$id/combined_credits", mapOf("language" to TmdbMetadata.currentAppLanguage))			
+            request("/person/$id/combined_credits", mapOf("language" to TmdbMetadata.currentAppLanguage))
         ).cast.orEmpty()
 
         val filtered = credits.asSequence()
@@ -89,9 +84,6 @@ internal class ActorFilmographyRepository(
             .toList()
         if (filtered.isEmpty()) return emptyList()
 
-        // Combined credits mix movies and series, so both catalogues are needed
-        // for the poster genre strip. Fetch is skipped for empty results to keep
-        // fast paths and existing tests network-light.
         val genreRepo = DiscoverRepository(request)
         val catalogue = coroutineScope {
             val movies = async(Dispatchers.IO) { genreRepo.genres(DiscoverMediaType.MOVIES) }
