@@ -717,12 +717,19 @@ override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
                     if (currentFragment is com.lagradost.cloudstream3.ui.home.HomeFragment) {
                         showToast("Eklenti Seçimi Açılıyor", Toast.LENGTH_SHORT)
                         
-                        runCatching {
-                            val method = currentFragment::class.java.getDeclaredMethod("actionSelectProvider")
-                            method.isAccessible = true
-                            method.invoke(currentFragment)
-                        }.onFailure { e ->
-                            e.printStackTrace()
+                        // Reflection yerine doğrudan arayüzdeki 'home_change_api' butonuna tıklama simülasyonu yapılır
+                        val changeApiButton = currentFragment.view?.findViewById<android.view.View>(R.id.home_change_api)
+                        if (changeApiButton != null) {
+                            changeApiButton.performClick()
+                        } else {
+                            // Alternatif olarak reflection ile metot çağrımı yedek tutulur
+                            runCatching {
+                                val method = currentFragment::class.java.getDeclaredMethod("actionSelectProvider")
+                                method.isAccessible = true
+                                method.invoke(currentFragment)
+                            }.onFailure { e ->
+                                e.printStackTrace()
+                            }
                         }
                         
                         return true
