@@ -165,6 +165,7 @@ object SettingsUIScreen : SearchableSettings {
                         }),
                 )
             ),
+
         
             Preference.PreferenceGroup(
                 title = stringResource(R.string.pref_category_ui_features),
