@@ -26,6 +26,7 @@ import com.lagradost.cloudstream3.ui.settings.Globals.isLayout
 import com.lagradost.cloudstream3.utils.UIHelper.isBottomLayout
 import com.lagradost.cloudstream3.utils.UIHelper.toPx
 
+
 class HomeScrollViewHolderState(view: ViewBinding) : ViewHolderState<Boolean>(view) {
     // very shitty that we cant store the state when the view clears,
     // but this is because the focus clears before the view is removed
