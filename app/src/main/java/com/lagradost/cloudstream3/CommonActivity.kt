@@ -392,7 +392,7 @@ object CommonActivity {
             }
             
 // Font Overlay Uygulaması
-val currentFontOverlay = when (settingsManager.getString(act.getString(R.string.app_font_key), "Default")) {
+ val currentFontOverlay = when (settingsManager.getString(act.getString(R.string.app_font_key), "Default")) {
     "TimesNewRoman" -> R.style.TimesNewRomanFontOverlay
     "StixGeneral" -> R.style.StixGeneralFontOverlay
 	"ComicSans" -> R.style.ComicSansFontOverlay
@@ -409,13 +409,14 @@ val currentFontOverlay = when (settingsManager.getString(act.getString(R.string.
             
         act.theme.applyStyle(currentTheme, true)
         act.theme.applyStyle(currentOverlayTheme, true)
-        act.theme.applyStyle(currentFontOverlay, true)
+	    act.theme.applyStyle(currentFontOverlay, true)
 	
         appliedTheme = currentTheme
         appliedColor = currentOverlayTheme
         appliedFont = currentFontOverlay // Font durumunu kaydet
         act.updateTv()
-        if (isLayout(TV)) act.theme.applyStyle(R.style.AppThemeTvOverlay, true)
+        
+	 if (isLayout(TV)) act.theme.applyStyle(R.style.AppThemeTvOverlay, true)
         act.theme.applyStyle(
             R.style.LoadedStyle,
             true
