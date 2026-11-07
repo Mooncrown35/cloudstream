@@ -120,7 +120,8 @@ object CommonActivity {
     var keyEventListener: ((Pair<KeyEvent?, Boolean>) -> Boolean)? = null
     var appliedTheme: Int = 0
     var appliedColor: Int = 0
-
+    var appliedFont: Int = 0 // <- Bu satırı ekleyin  yeni eklendi
+    
     private var currentToast: Toast? = null
 
     fun showToast(@StringRes message: Int, duration: Int? = null) {
@@ -389,11 +390,30 @@ object CommonActivity {
 
                 else -> R.style.OverlayPrimaryColorNormal
             }
+            
+// Font Overlay Uygulaması
+val currentFontOverlay = when (settingsManager.getString(act.getString(R.string.app_font_key), "Default")) {
+    "TimesNewRoman" -> R.style.TimesNewRomanFontOverlay
+    "StixGeneral" -> R.style.StixGeneralFontOverlay
+	"ComicSans" -> R.style.ComicSansFontOverlay
+    "Maybach" -> R.style.MaybachFontOverlay
+    "Perfume" -> R.style.PerfumeFontOverlay
+    "Naxmos" -> R.style.NaxmosFontOverlay	
+	"Consola" -> R.style.ConsolaFontOverlay
+    "Futura" -> R.style.FuturaFontOverlay
+    "GoogleSans" -> R.style.GoogleSansFontOverlay
+    "Gotham" -> R.style.GothamFontOverlay
+   
 
+
+            
         act.theme.applyStyle(currentTheme, true)
         act.theme.applyStyle(currentOverlayTheme, true)
+        act.theme.applyStyle(currentFontOverlay, true)
+	
         appliedTheme = currentTheme
         appliedColor = currentOverlayTheme
+        appliedFont = currentFontOverlay // Font durumunu kaydet
         act.updateTv()
         if (isLayout(TV)) act.theme.applyStyle(R.style.AppThemeTvOverlay, true)
         act.theme.applyStyle(
