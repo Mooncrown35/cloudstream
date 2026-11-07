@@ -43,7 +43,7 @@ import kotlinx.collections.immutable.toPersistentMap
 
 object SettingsUIScreen : SearchableSettings {
     @Composable
-    override fun getTitleRes(): Int = stringResource(R.string.category_ui)
+    override fun getTitleRes(): String = stringResource(R.string.category_ui)
 
     fun SearchQuality.toStringRes() = when (this) {
         SearchQuality.BlueRay -> R.string.quality_blueray
