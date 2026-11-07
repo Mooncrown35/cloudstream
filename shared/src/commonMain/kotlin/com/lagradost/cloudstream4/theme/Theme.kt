@@ -13,6 +13,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Typography
+import androidx.compose.ui.text.font.FontFamily
+
+
 enum class CloudStreamThemeMode {
     /** "Black" standard dark, #111111 backgrounds */
     Dark,
@@ -105,6 +110,8 @@ internal val LocalSharedInfiniteTransition = staticCompositionLocalOf<InfiniteTr
  * Global synchronized animation, so many items in e.g. a LazyList can animate at the same time,
  * even if they appeared at different times
  * */
+val LocalAppFontFamily = staticCompositionLocalOf<FontFamily?> { null }
+ 
 @Composable
 @ReadOnlyComposable
 fun MaterialTheme.infiniteSharedTransition() = LocalSharedInfiniteTransition.current
@@ -114,20 +121,36 @@ fun CloudStreamPreviewTheme(content: @Composable () -> Unit) {
     CloudStreamTheme(content = content)
 }
 
+/**
+ * Seçili fontu Material3 tipografisine çevirir (asıl tanım AppFont.kt içindedir).
+ */
+@Composable
+private fun getDynamicTypography(fontFamily: FontFamily?): Typography {
+    return rememberAppTypography(fontFamily)
+}
+
+
 @Composable
 fun CloudStreamTheme(
     mode: CloudStreamThemeMode = CloudStreamThemeMode.FollowSystem,
     primaryColor: CloudStreamPrimaryColor = CloudStreamPrimaryColor.NORMAL,
+    fontFamily: FontFamily? = rememberAppFontFamily(),
     content: @Composable () -> Unit,
 ) {
     val csColors = modeToTheme(mode, primaryColor)
     val globalTransition = rememberInfiniteTransition(label = "GlobalSharedTransition")
-    // We do not provide csColors as a global, because people should use MaterialTheme directly instead
-    CompositionLocalProvider(LocalSharedInfiniteTransition provides globalTransition) {
+    val typography = getDynamicTypography(fontFamily)
+
+    CompositionLocalProvider(
+        LocalSharedInfiniteTransition provides globalTransition,
+        LocalAppFontFamily provides fontFamily
+    ) {
         MaterialTheme(
             colorScheme = csColors.toMaterial3ColorScheme(),
-            content = content,
-            typography = AppFont.typography
-        )
+            typography = typography,
+        ) {
+            // Stil belirtmeyen Text() çağrıları için de varsayılanı ayarla.
+            ProvideTextStyle(typography.bodyMedium, content = content)
+        }
     }
 }
