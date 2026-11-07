@@ -43,7 +43,7 @@ import kotlinx.collections.immutable.toPersistentMap
 
 object SettingsUIScreen : SearchableSettings {
     @Composable
-    override fun getTitleRes(): String = stringResource(R.string.category_ui)
+    override fun getTitleRes(): Int = stringResource(R.string.category_ui)
 
     fun SearchQuality.toStringRes() = when (this) {
         SearchQuality.BlueRay -> R.string.quality_blueray
@@ -146,10 +146,7 @@ object SettingsUIScreen : SearchableSettings {
                             }
                             return@ListPreference false
                         }),
-                )
-            ),
-
-                     Preference.PreferenceItem.ListPreference(
+                    Preference.PreferenceItem.ListPreference(
                         preference = settings.ui.appFont,
                         icon = painterResource(R.drawable.ic_baseline_text_fields_24),
                         title = stringResource(R.string.app_font_settings),
@@ -165,8 +162,6 @@ object SettingsUIScreen : SearchableSettings {
                         }),
                 )
             ),
-
-        
             Preference.PreferenceGroup(
                 title = stringResource(R.string.pref_category_ui_features),
                 preferenceItems = persistentListOf(
@@ -185,7 +180,6 @@ object SettingsUIScreen : SearchableSettings {
                             )
                             return@SliderPreference false
                         }),
-
                     Preference.PreferenceItem.SwitchPreference(
                         preference = settings.ui.advancedSearch,
                         title = stringResource(R.string.advanced_search),
@@ -247,7 +241,6 @@ object SettingsUIScreen : SearchableSettings {
                     ),
                 )
             ),
-
             Preference.PreferenceGroup(
                 title = stringResource(R.string.search_poster_img_des),
                 preferenceItems = persistentListOf(
