@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- FORMAT MIGHT TRANSLATE, WILL CAUSE CRASH IF APPLIED WRONG -->
+    <!-- Uygulama Font Ayarları Anahtarları ve Başlıkları -->
+<string name="app_font_title">Uygulama Yazı Tipi</string>
+<string name="app_font_key">app_font_key</string>
+<string name="app_font_settings">Uygulama Yazı Tipi</string>
+<string name="app_font_default">Varsayılan</string>
+	<!-- FORMAT MIGHT TRANSLATE, WILL CAUSE CRASH IF APPLIED WRONG -->
     <string name="app_dub_sub_episode_text_format" formatted="true">%1$s B. %2$d</string>
     <string name="cast_format" formatted="true">Oyuncular: %s</string>
     <string name="next_episode_format" formatted="true">%d. Bölüm şu tarihte yayınlanacak</string>
