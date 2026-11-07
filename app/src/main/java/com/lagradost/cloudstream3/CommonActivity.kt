@@ -404,7 +404,7 @@ object CommonActivity {
     "GoogleSans" -> R.style.GoogleSansFontOverlay
     "Gotham" -> R.style.GothamFontOverlay
    
-
+}
 
             
         act.theme.applyStyle(currentTheme, true)
