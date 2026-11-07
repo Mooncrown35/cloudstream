@@ -1,46 +1,113 @@
-name: Dokka (Fork-Friendly)
+name: Archive build
 
 on:
   push:
     branches: [ master ]
     paths-ignore:
       - '*.md'
+      - '*.json'
+      - '**/wcokey.txt'
   workflow_dispatch:
 
+# Node.js 24 uyarısını susturmak için opsiyonel env
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 concurrency:
-  group: "dokka"
+  group: "Archive-build"
   cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Source
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 17
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
 
-      - name: Generate Dokka
-        run: |
-          chmod +x gradlew
-          ./gradlew :docs:dokkaGeneratePublicationHtml || ./gradlew dokkaHtml
-        # Not: Bazı projelerde komut farklı olabilir, hata verirse gradlew yanındaki komutu kontrol et.
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
 
-      - name: Upload Documentation Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: CloudStream-Documentation
-          path: |
-            docs/build/dokka/html/
-            app/build/dokka/html/
-            build/dokka/html/
+    # Türkçe (values-b+tr) dosyasında eksik kalan metin anahtarlarını kontrol eden adım
+    - name: Check Missing Turkish Strings
+      run: |
+        python3 -c "
+        import xml.etree.ElementTree as ET
+        import os, glob
+
+        # values ve values-b+tr dizinlerindeki strings.xml dosyalarını otomatik bulur
+        default_files = glob.glob('**/src/main/res/values/strings.xml', recursive=True)
+        tr_files = glob.glob('**/src/main/res/values-b+tr/strings.xml', recursive=True)
+
+        if not default_files:
+            print('HATA: Varsayılan (values/strings.xml) bulunamadı.')
+            exit(0)
+
+        if not tr_files:
+            print('HATA: Türkçe (values-b+tr/strings.xml) bulunamadı.')
+            exit(0)
+
+        default_xml = default_files[0]
+        tr_xml = tr_files[0]
+
+        print(f'Eşleşen Varsayılan XML: {default_xml}')
+        print(f'Eşleşen Türkçe XML: {tr_xml}')
+
+        def parse_keys(file_path):
+            try:
+                tree = ET.parse(file_path)
+                root = tree.getroot()
+                keys = set()
+                for child in root:
+                    if 'name' in child.attrib:
+                        keys.add(child.attrib['name'])
+                return keys
+            except Exception as e:
+                print(f'XML Ayrıştırma Hatası ({file_path}): {e}')
+                return set()
+
+        def_keys = parse_keys(default_xml)
+        tr_keys = parse_keys(tr_xml)
+
+        missing = def_keys - tr_keys
+
+        print('==================================================')
+        if missing:
+            print(f'Turkce dosyasında eksik olan {len(missing)} adet string anahtarı bulundu:')
+            for key in sorted(missing):
+                print(f' - {key}')
+        else:
+            print('Tebrikler! Türkçe strings.xml dosyasında eksik anahtar bulunamadı.')
+        print('==================================================')
+        "
+      continue-on-error: true
+
+    - name: Run Gradle Build
+      run: ./gradlew clean assembleDebug --stacktrace --info
+      env:
+        SIMKL_CLIENT_ID: ${{ secrets.SIMKL_CLIENT_ID }}
+        SIMKL_CLIENT_SECRET: ${{ secrets.SIMKL_CLIENT_SECRET }}
+        MDL_API_KEY: ${{ secrets.MDL_API_KEY }}
+
+    # Üretilen APK'nın yerini kesin olarak bulmak için bu adımı ekledik
+    - name: Find APK Path
+      run: find app/build/outputs/apk/ -name "*.apk"
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: CloudStream-Debug-APK
+        # 'debug/*.apk' yerine '**/*.apk' kullanarak tüm alt klasörleri tarıyoruz
+        path: "app/build/outputs/apk/**/*.apk"
