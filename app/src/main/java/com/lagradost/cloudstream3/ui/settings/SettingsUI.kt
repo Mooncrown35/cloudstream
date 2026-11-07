@@ -228,6 +228,36 @@ class SettingsUI : BasePreferenceFragmentCompat() {
             return@setOnPreferenceClickListener true
         }
 
+        getPref(R.string.app_font_key)?.setOnPreferenceClickListener {
+            val prefNames = resources.getStringArray(R.array.app_font_names).toMutableList()
+            val prefValues = resources.getStringArray(R.array.app_font_values).toMutableList()
+
+            val fontKeyRes = getString(R.string.app_font_key)
+            val currentFont = settingsManager.getString(
+                fontKeyRes,
+                prefValues.firstOrNull() ?: "Default"
+            ) ?: "Default"
+
+            activity?.showBottomDialog(
+                prefNames.toList(),
+                prefValues.indexOf(currentFont).let { if (it != -1) it else 0 },
+                getString(R.string.app_font_settings),
+                true,
+                {}
+            ) { index ->
+                try {
+                    prefValues.getOrNull(index)?.let { selectedFont ->
+                        settingsManager.edit {
+                            putString(fontKeyRes, selectedFont)
+                        }
+                        activity?.recreate()
+                    }
+                } catch (e: Exception) {
+                    logError(e)
+                }
+            }
+            true
+        }
         getPref(R.string.tv_layout_clock_key)?.hideOn(PHONE or EMULATOR)
 
         getPref(R.string.confirm_exit_key)?.setOnPreferenceClickListener {
