@@ -146,7 +146,7 @@ object SettingsUIScreen : SearchableSettings {
                             }
                             return@ListPreference false
                         }),
-                    Preference.PreferenceItem.ListPreference(
+              Preference.PreferenceItem.ListPreference(
                         preference = settings.ui.appFont,
                         icon = painterResource(R.drawable.ic_baseline_text_fields_24),
                         title = stringResource(R.string.app_font_settings),
@@ -155,9 +155,8 @@ object SettingsUIScreen : SearchableSettings {
                             .toMap()
                             .toPersistentMap(),
                         onValueChanged = { newValue ->
-                            // Font artık reaktif okunuyor (rememberAppFontFamily);
-                            // recreate() gerekmez, ama eski XML ekranları için zararsız.
                             settings.ui.appFont.set(newValue)
+							  safe {activity?.recreate()}
                             return@ListPreference false
                         }),
                 )
